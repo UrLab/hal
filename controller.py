@@ -9,15 +9,15 @@ class AmbianceduinoNotFound(Exception):
 class Ambianceduino:
 	DEV_PATTERNS = ["/dev/ttyACM*", "/dev/ttyUSB*"]
 
-	def __init__(self, max_try=5):
+	def __init__(self, boot_time=3):
 		possible_devices = [f for pattern in self.DEV_PATTERNS for f in glob(pattern)]
 		for device in possible_devices:
 			self.serial = Serial(device, 115200, timeout=1)
-			sleep(3) #Wait arduino boot
+			sleep(boot_time) #Wait arduino boot
 			self.serial.write('?')
 			got = self.serial.readline()
 			#Magic string
-			if "jesuisuncanapequichante" in got:
+			if "?jesuisuncanapequichante" in got:
 				break
 			else:
 				print(got)
@@ -26,46 +26,56 @@ class Ambianceduino:
 		if not self.serial:
 			raise AmbianceduinoNotFound(str(possible_devices))
 
-	def get_animation_delay(self):
-		self.serial.write('#')
+	def magic(self):
+		self.serial.write('?')
 		res = self.serial.readline().strip()
-		if "delay=" in res:
-			return int(res.split('=')[1])
+		if res[0] == '?':
+			return res[1:]
 
-	def set_animation_delay(self, delay):
-		assert(0<delay<256)
-		self.serial.write('#'+chr(delay))
+	def delay(self, delay=None):
+		query = '#'
+		if delay in range(0, 256):
+			query += chr(delay)
+		self.serial.write(query)
 		res = self.serial.readline().strip()
-		if "delay=" in res:
-			return int(res.split('=')[1])
+		if res[0] == '#':
+			return int(res[1:])
+		else: print res
 
-	def get_analogs(self):
+	def analogs(self):
 		self.serial.write('@')
-		res = json.loads(self.serial.readline())
+		res = self.serial.readline().strip()
+		if res[0] == '@':
+			return json.loads(res[1:])
 
-	def set_power_on(self):
+	def upload_anim(self, curve):
+		dots = []
+		for dot in curve:
+			if 0 <= dot < 256: dots.append(chr(dot))
+		self.serial.write('R' + chr(len(dots)) + ''.join(dots))
+		res = self.serial.readline().strip()
+		if res == "R":
+			return True
+		elif res == "!R":
+			return False
+
+	def on(self):
 		self.serial.write('-')
-		return "powerup" in self.serial.readline()
+		return self.serial.readline().strip() == '-'
 
-	def set_power_off(self):
+	def off(self):
 		self.serial.write('_')
-		return "powerdown" in self.serial.readline()
+		return self.serial.readline().strip() == '_'
 
 if __name__ ==  "__main__":
 	import os
 	import signal
 
 	a = Ambianceduino()
-	print("Got Ambianceduino")
-
-	def signal_handler(signum, stack):
-		if signum == signal.SIGUSR1:
-			a.set_power_on()
-		elif signum == signal.SIGUSR2:
-			a.set_power_off()
-
-	signal.signal(signal.SIGUSR1, signal_handler)
-	signal.signal(signal.SIGUSR2, signal_handler)
-
-	while True:
-		sleep(0.3)
+	print "magic:", a.magic()
+	print "analogs:", a.analogs()
+	print "upload:", a.upload_anim([3,3,2,5,4,7,9,2,1,0,12,3])
+	print "delay 30:", a.delay(30)
+	print "power on:", a.on()
+	sleep(5)
+	print "power off:", a.off()
