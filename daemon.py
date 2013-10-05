@@ -15,8 +15,8 @@ class AmbianceDaemon(Ambianceduino):
 
 	def mainloop(self):
 		while True:
-			self.sleep(60)
 			self.spacestatus()
+			sleep(60)
 
 if __name__ == "__main__":
-	AmbianceDaemon(boot_time=5).mainloop()
+	AmbianceDaemon(boot_time=10).mainloop()
