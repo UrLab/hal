@@ -30,7 +30,7 @@ Animation::Animation(pin, PREDEF_SIN_LEN, (unsigned char *) predefined_sin, 25)
 
 Animation::Animation(int pin, unsigned char len, unsigned char *curve, unsigned char delay): 
 __pin(pin), __len(len), __curve(curve), __delay(delay), __t(0),
-__frame_index(0)
+__frame_index(0), __loop(0)
 {
 	pinMode(__pin, OUTPUT);
 }
@@ -43,6 +43,16 @@ unsigned char Animation::length() const
 	return __len;
 }
 
+unsigned int Animation::loop() const
+{
+	return __loop;
+}
+
+void Animation::reset_loop()
+{
+	__loop = 0;
+}
+
 void Animation::setLength(unsigned char length)
 {
 	__len = length;
@@ -53,15 +63,34 @@ void Animation::seek(unsigned char position)
 	if (__len>0) __frame_index = position%__len;
 }
 
-void Animation::play()
-{	
-	if (__len>0){
+bool Animation::__frame_change()
+{
+	if (__len > 0){
 		unsigned long now = millis();
 		if (now-__t >= __delay){
 			__frame_index = (__frame_index+1)%__len;
+			if (__frame_index == 0)
+				__loop++;
 			__t = now;
-			analogWrite(__pin, __curve[__frame_index]);
+			return true;
 		}
+	}
+	return false;
+}
+
+void Animation::play()
+{	
+	if (__frame_change())
+		analogWrite(__pin, __curve[__frame_index]);
+}
+
+void Animation::play_tone()
+{
+	if (__frame_change()){
+		if (__curve[__frame_index]>0)
+			tone(__pin, __curve[__frame_index]*4);
+		else
+			noTone(__pin);
 	}
 }
 
