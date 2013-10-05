@@ -8,6 +8,9 @@
 
 #include "animation.h"
 
+#define BAUDS 115200
+#define waitSerial() while(Serial.available()==0)
+
 /* ==== pinout ==== */
 #define POWER1 2
 #define LEDS 3
@@ -17,12 +20,11 @@ static void update_ledstrips();
 static void read_serial();
 
 static int i, c;
-static unsigned char anim_buffer[256];
 BufferedAnimation ledstrip(LEDS);
 
 /* ==== Arduino main ==== */
 void setup(){
-	Serial.begin(115200);
+	Serial.begin(BAUDS);
 	pinMode(13, OUTPUT);
 }
 
@@ -38,6 +40,7 @@ static bool ledstrip_power = false;
 static void update_ledstrips(){
 	digitalWrite(POWER1, (ledstrip_power) ? HIGH : LOW);
 	if (ledstrip_power) ledstrip.play();
+	else analogWrite(LEDS, 0);
 }
 
 /* ==== Serial communication ==== */
@@ -64,20 +67,22 @@ static void read_serial(){
 				Serial.println("]");
 				break;
 			case '#':
-				if (Serial.available()){
-					c = Serial.read();
-					ledstrip.set_delay(c);
-				}
+				waitSerial();
+				c = Serial.read();
+				ledstrip.set_delay(c);
 				Serial.print("#");
 				Serial.println(ledstrip.delay(), DEC);
 				break;
 			case 'R':
-				delayMicroseconds(9);
+				waitSerial();
 				if (Serial.available()){
-					int len = Serial.read();
-					for (i=0; i<len; i++)
-						anim_buffer[i] = Serial.read();
-					Serial.println("R");
+					ledstrip.setLength(Serial.read());
+					for (i=0; i<ledstrip.length(); i++){
+						waitSerial();
+						ledstrip[i] = Serial.read();
+					}
+					Serial.print("R");
+					Serial.println(i);
 				} else {
 					Serial.println("!R");
 				}

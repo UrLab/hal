@@ -74,17 +74,8 @@ void Animation::set_delay(unsigned char delay)
 	__delay = delay;
 }
 
-/*
-class BufferedAnimation : public Animation {
-	private:
-		unsigned char __buffer[256];
-	public:
-		explicit BufferedAnimation(int pin);
-		unsigned char & operator[](size_t offset);
-};
-*/
 BufferedAnimation::BufferedAnimation(int pin):
-Animation::Animation(pin, 0, __buffer)
+Animation::Animation(pin, PREDEF_SIN_LEN, __buffer)
 {
 	memcpy(__buffer, predefined_sin, PREDEF_SIN_LEN);
 }
