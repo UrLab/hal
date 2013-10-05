@@ -76,7 +76,7 @@ static void read_serial(){
 			case '#':
 				waitSerial();
 				c = Serial.read();
-				ledstrip.set_delay(c);
+				if (c != 0)	ledstrip.set_delay(c);
 				Serial.print("#");
 				Serial.println(ledstrip.delay(), DEC);
 				break;
