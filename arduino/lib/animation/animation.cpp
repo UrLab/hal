@@ -75,11 +75,11 @@ void Animation::set_delay(unsigned char delay)
 }
 
 BufferedAnimation::BufferedAnimation(int pin):
-Animation::Animation(pin, PREDEF_SIN_LEN, __buffer)
+Animation::Animation(pin, PREDEF_SIN_LEN, __buffer, 25)
 {
 	memcpy(__buffer, predefined_sin, PREDEF_SIN_LEN);
 }
 
-unsigned char & BufferedAnimation::operator[](size_t offset){
+unsigned char & BufferedAnimation::operator[](unsigned char offset){
 	return __buffer[offset%length()];
 }

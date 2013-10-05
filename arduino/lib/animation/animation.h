@@ -33,7 +33,7 @@ class BufferedAnimation : public Animation {
 		unsigned char __buffer[256];
 	public:
 		explicit BufferedAnimation(int pin);
-		unsigned char & operator[](size_t offset);
+		unsigned char & operator[](unsigned char offset);
 };
 
 #endif
