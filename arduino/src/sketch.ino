@@ -14,7 +14,7 @@
 /* ==== pinout ==== */
 #define BELL 4
 #define POWER1 2
-#define LEDS 3
+#define LEDS 5
 #define BUZZER 8
 
  static const char *analog_map[6] = {
@@ -42,13 +42,27 @@ void loop(){
 }
 
 /* ==== Door & bell ==== */
+static bool ringtone_triggered = false;
 static int bell_state = LOW;
+static uint8_t ringtone_notes[] = {
+	0, 123, 0, 123, 0, 110, 0, 123, 123, 123, 0, 92, 92, 0, 0, 92, 0, 123, 0, 164, 0, 155, 0, 123, 123, 123, 123, 123, 123, 123, 123, 123
+};
+static Animation ringtone(BUZZER, sizeof(ringtone_notes), ringtone_notes, 70);
+
 static void door_bell_check(){
 	int b = digitalRead(BELL);
+	if (ringtone_triggered){
+		ringtone.play_tone();
+		if (ringtone.loop() >= 2){
+			ringtone_triggered = false;
+			ringtone.reset_loop();
+			noTone(BUZZER);
+		}
+	}
 	if (b==HIGH && bell_state==LOW){
 		bell_state = b;
 		Serial.println("*");
-		tone(BUZZER, 440, 1000);
+		ringtone_triggered = true;
 	} else if (b==LOW && bell_state==HIGH){
 		bell_state = b;
 	}
