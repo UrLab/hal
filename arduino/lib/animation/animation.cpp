@@ -60,7 +60,6 @@ void Animation::play()
 		if (now-__t >= __delay){
 			__frame_index = (__frame_index+1)%__len;
 			__t = now;
-			Serial.println(__curve[__frame_index], DEC);
 			analogWrite(__pin, __curve[__frame_index]);
 		}
 	}
