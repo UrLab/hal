@@ -15,6 +15,7 @@
 #define BELL 4
 #define POWER1 2
 #define LEDS 3
+#define BUZZER 8
 
  static const char *analog_map[6] = {
  	"temp_radia", "light_out", "temp_amb", "light_in", "temp_lm35", "Analog5" 
@@ -37,6 +38,7 @@ void setup(){
 void loop(){
 	read_serial();
 	update_ledstrips();
+	door_bell_check();
 }
 
 /* ==== Door & bell ==== */
@@ -46,6 +48,7 @@ static void door_bell_check(){
 	if (b==HIGH && bell_state==LOW){
 		bell_state = b;
 		Serial.println("*");
+		tone(BUZZER, 440, 1000);
 	} else if (b==LOW && bell_state==HIGH){
 		bell_state = b;
 	}
