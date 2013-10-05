@@ -27,12 +27,16 @@ static const unsigned char predefined_sin[PREDEF_SIN_LEN] = {
 Animation::Animation(int pin):
 __pin(pin), __len(PREDEF_SIN_LEN), __curve((unsigned char *) predefined_sin), 
 __delay(25), __t(0), __frame_index(0)
-{}
+{
+	pinMode(__pin, OUTPUT);
+}
 
 Animation::Animation(int pin, unsigned char len, unsigned char *curve, unsigned char delay): 
 __pin(pin), __len(len), __curve(curve), __delay(delay), __t(0),
 __frame_index(0)
-{}
+{
+	pinMode(__pin, OUTPUT);
+}
 
 Animation::~Animation()
 {}
