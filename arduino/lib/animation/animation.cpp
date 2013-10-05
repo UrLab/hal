@@ -24,8 +24,8 @@ static const unsigned char predefined_sin[PREDEF_SIN_LEN] = {
 	121, 124
 };
 
-Animation::Animation(int pin):
-Animation::Animation(pin, PREDEF_SIN_LEN, (unsigned char *) predefined_sin, 25)
+Animation::Animation(int pin, unsigned char delay):
+Animation::Animation(pin, PREDEF_SIN_LEN, (unsigned char *) predefined_sin, delay)
 {}
 
 Animation::Animation(int pin, unsigned char len, unsigned char *curve, unsigned char delay): 

@@ -42,20 +42,21 @@ void loop(){
 }
 
 /* ==== Door & bell ==== */
-static bool ringtone_triggered = false;
+static bool ringtone_active = false;
 static int bell_state = LOW;
 static uint8_t ringtone_notes[] = {
 	0, 123, 0, 123, 0, 110, 0, 123, 123, 123, 0, 92, 92, 0, 0, 92, 0, 123, 
 	0, 164, 0, 155, 0, 123, 123, 123, 123, 123, 123, 123, 123, 123
 };
-static Animation ringtone(BUZZER, sizeof(ringtone_notes), ringtone_notes, 70);
+static Animation ringtone(BUZZER, sizeof(ringtone_notes), ringtone_notes, 126);
+static Animation ringtone_leds(LEDS, 2);
 
 static void door_bell_check(){
 	int b = digitalRead(BELL);
-	if (ringtone_triggered){
+	if (ringtone_active){
 		ringtone.play_tone();
 		if (ringtone.loop() >= 2){
-			ringtone_triggered = false;
+			ringtone_active = false;
 			ringtone.reset_loop();
 			noTone(BUZZER);
 		}
@@ -63,7 +64,7 @@ static void door_bell_check(){
 	if (b==HIGH && bell_state==LOW){
 		bell_state = b;
 		Serial.println("*");
-		ringtone_triggered = true;
+		ringtone_active = true;
 	} else if (b==LOW && bell_state==HIGH){
 		bell_state = b;
 	}
@@ -75,8 +76,14 @@ static bool ledstrip_power = false;
 
 static void update_ledstrips(){
 	digitalWrite(POWER1, (ledstrip_power) ? HIGH : LOW);
-	if (ledstrip_power) ledstrip.play();
-	else analogWrite(LEDS, 0);
+	if (ledstrip_power){
+		if (ringtone_active)
+			ringtone_leds.play();
+		else 
+			ledstrip.play();
+	} else {
+		analogWrite(LEDS, 0);
+	}
 }
 
 /* ==== Serial communication ==== */

@@ -19,7 +19,7 @@ class Animation {
 
 		bool __frame_change();
 	public:
-		Animation(int pin);
+		Animation(int pin, unsigned char delay=25);
 		Animation(int pin, unsigned char len, unsigned char *curve, unsigned char delay=25);
 		~Animation();
 		unsigned char length() const;
