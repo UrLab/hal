@@ -15,6 +15,10 @@
 #define POWER1 2
 #define LEDS 3
 
+ static const char *analog_map[6] = {
+ 	"temp_radia", "light_out", "temp_amb", "light_in", "temp_lm35", "Analog5" 
+ };
+
 /* ==== Subroutines ==== */
 static void update_ledstrips();
 static void read_serial();
@@ -59,12 +63,15 @@ static void read_serial(){
 				Serial.println("_");
 				break;
 			case '@':
-				Serial.print("@[");
+				Serial.print("@{");
 				for (i=0; i<6; i++){
 					if (i>0) Serial.print(",");
+					Serial.print("\"");
+					Serial.print(analog_map[i]);
+					Serial.print("\":");
 					Serial.print(analogRead(i), DEC);
 				}
-				Serial.println("]");
+				Serial.println("}");
 				break;
 			case '#':
 				waitSerial();
