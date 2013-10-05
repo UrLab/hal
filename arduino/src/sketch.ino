@@ -12,6 +12,7 @@
 #define waitSerial() while(Serial.available()==0)
 
 /* ==== pinout ==== */
+#define BELL 4
 #define POWER1 2
 #define LEDS 3
 
@@ -22,6 +23,7 @@
 /* ==== Subroutines ==== */
 static void update_ledstrips();
 static void read_serial();
+static void door_bell_check();
 
 static int i, c;
 BufferedAnimation ledstrip(LEDS);
@@ -29,7 +31,7 @@ BufferedAnimation ledstrip(LEDS);
 /* ==== Arduino main ==== */
 void setup(){
 	Serial.begin(BAUDS);
-	pinMode(13, OUTPUT);
+	pinMode(BELL, INPUT);
 }
 
 void loop(){
@@ -37,8 +39,20 @@ void loop(){
 	update_ledstrips();
 }
 
-/* ==== Ledstrips animations ==== */
+/* ==== Door & bell ==== */
+static int bell_state = LOW;
+static void door_bell_check(){
+	int b = digitalRead(BELL);
+	if (b==HIGH && bell_state==LOW){
+		bell_state = b;
+		Serial.println("*");
+	} else if (b==LOW && bell_state==HIGH){
+		bell_state = b;
+	}
+}
 
+
+/* ==== Ledstrips animations ==== */
 static bool ledstrip_power = false;
 
 static void update_ledstrips(){

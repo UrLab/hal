@@ -28,6 +28,8 @@ class AmbianceduinoReader:
 		elif line[0] == 'R':
 			anim_length = int(line[1:])
 			self.when_anim(anim_length)
+		elif line[0] == '*':
+			self.when_bell()
 
 	def read_loop(self):
 		while self.running:
@@ -56,6 +58,9 @@ class AmbianceduinoReader:
 
 	def when_anim(self, anim_length):
 		self.default_handler("Animation length:", anim_length)
+
+	def when_bell(self):
+		self.default_handler("Someone ring the bell !!!")
 
 	def when_on(self):
 		self.default_handler("Powered on")
@@ -119,27 +124,7 @@ class Ambianceduino(AmbianceduinoReader):
 		self.__request('_')
 
 if __name__ ==  "__main__":
-	from sys import stdout
 
 	a = Ambianceduino()
-	print "Got Ambianceduino"
-
-	a.run() # Start async reader
-
-	a.delay()
-	a.delay(10)
-	a.analogs()
-	a.on()
-
-	print "\033[1m10s with firmware animation\033[0m"
-	sleep(10)
-
-	def fun(i):
-		return int(-0.0625*i + 4)
-
-	a.upload_anim(range(255))
-
-	print "\033[1m10s with new animation\033[0m"
-	sleep(10)
-	a.off()
-	a.stop()
+	with open('')	
+		while True:
