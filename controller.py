@@ -12,26 +12,29 @@ class AmbianceduinoReader:
 	def __init__(self, device):
 		self.serial = serial
 
+	def eval_line(self, line):
+		if line[0] == '#':
+			delay = int(line[1:])
+			self.when_delay(delay)
+		elif line[0] == '@':
+			analogs = json.loads(line[1:])
+			self.when_analogs(analogs)
+		elif line[0] == '!':
+			self.when_error(line[1:])
+		elif line[0] == '-':
+			self.when_on()
+		elif line[0] == '_':
+			self.when_off()
+		elif line[0] == 'R':
+			anim_length = int(line[1:])
+			self.when_anim(anim_length)
+
 	def read_loop(self):
 		while self.running:
 			line = self.serial.readline().strip()
-			if len(line) == 0:
-				continue
-			if line[0] == '#':
-				delay = int(line[1:])
-				self.when_delay(delay)
-			elif line[0] == '@':
-				analogs = json.loads(line[1:])
-				self.when_analogs(analogs)
-			elif line[0] == '!':
-				self.when_error(line[1:])
-			elif line[0] == '-':
-				self.when_on()
-			elif line[0] == '_':
-				self.when_off()
-			elif line[0] == 'R':
-				anim_length = int(line[1:])
-				self.when_anim(anim_length)
+			if len(line) > 0:
+				self.eval_line(line)
+			
 
 	def run(self):
 		self.running = True
@@ -92,10 +95,12 @@ class Ambianceduino(AmbianceduinoReader):
 		if not self.serial:
 			raise AmbianceduinoNotFound("Tried "+str(possible_devices+[device_path]))
 
-	def delay(self, delay=None):
+	def delay(self, delay=1):
 		query = '#'
-		if delay in range(0, 256):
+		if delay in range(1, 256):
 			query += chr(delay)
+		else:
+			query += chr(0)
 		self.__request(query)
 
 	def analogs(self):
@@ -126,14 +131,15 @@ if __name__ ==  "__main__":
 	a.analogs()
 	a.on()
 
-	sleep(2)
+	print "\033[1m10s with firmware animation\033[0m"
+	sleep(10)
 
 	def fun(i):
 		return int(-0.0625*i + 4)
 
 	a.upload_anim(range(255))
-	a.delay(50)
 
+	print "\033[1m10s with new animation\033[0m"
 	sleep(10)
 	a.off()
 	a.stop()
