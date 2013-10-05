@@ -4,7 +4,7 @@
 #ifndef TEST_MODE
 #include "Arduino.h"
 #else
-#include <unistd.h>
+#include <fakeduino.h>
 #endif
 
 class Animation {
