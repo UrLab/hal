@@ -1,3 +1,3 @@
-from controller import Ambianceduino
+from ambianceduino import Ambianceduino
 
 Ambianceduino()
