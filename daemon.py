@@ -1,4 +1,4 @@
-from controller import *
+from ambianceduino import Ambianceduino
 from urllib import urlopen
 
 import json

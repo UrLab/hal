@@ -1,8 +1,5 @@
+#include "Arduino.h"
 #include "animation.h"
-
-#if defined TEST_MODE
-#include <fakeduino.h>
-#endif
 
 #define PREDEF_SIN_LEN 255
 static const unsigned char predefined_sin[PREDEF_SIN_LEN] = {

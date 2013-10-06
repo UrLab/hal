@@ -1,12 +1,6 @@
 #ifndef DEFINE_ANIMATION_HEADER
 #define DEFINE_ANIMATION_HEADER
 
-#ifndef TEST_MODE
-#include "Arduino.h"
-#else
-#include <fakeduino.h>
-#endif
-
 class Animation {
 	private:
 		int __pin;
