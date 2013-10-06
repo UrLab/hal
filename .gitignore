@@ -1,0 +1,4 @@
+arduino/.build/
+ve/
+*.pyc
+*.o
