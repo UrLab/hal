@@ -8,7 +8,8 @@ import json
 class AmbianceduinoNotFound(Exception):
 	pass
 
-class AmbianceduinoReader:
+
+class AmbianceduinoFinder(object):
 	DEV_PATTERNS = ["/dev/ttyACM*", "/dev/ttyUSB*", "/dev/tty.usbmodem*"]
 
 	def __try_device(self, device, boot_time):
@@ -21,7 +22,7 @@ class AmbianceduinoReader:
 			self.serial.close()
 			self.serial = None
 
-	def __init__(self, device_path=None, boot_time=2):
+	def __init__(self, device_path=None, boot_time=5):
 		if device_path:
 			self.__try_device(device_path, boot_time)
 		else:
@@ -33,7 +34,8 @@ class AmbianceduinoReader:
 		if not self.serial:
 			raise AmbianceduinoNotFound("Tried "+str(possible_devices+[device_path]))
 
-
+	
+class AmbianceduinoReader(AmbianceduinoFinder):
 	def eval_line(self, line):
 		if line[0] == '#':
 			delay = int(line[1:])
@@ -59,7 +61,6 @@ class AmbianceduinoReader:
 			if len(line) > 0:
 				self.eval_line(line)
 			
-
 	def run(self):
 		self.running = True
 		self.reader = Thread(target=self.read_loop)
@@ -94,7 +95,7 @@ class AmbianceduinoReader:
 		self.default_handler("Error:", err_string)
 
 
-class Ambianceduino(AmbianceduinoReader):
+class AmbianceduinoWriter(AmbianceduinoFinder):
 	def __request(self, req_bytes):
 		self.serial.write(req_bytes)
 
@@ -121,3 +122,6 @@ class Ambianceduino(AmbianceduinoReader):
 	def off(self):
 		self.__request('_')
 
+
+class Ambianceduino(AmbianceduinoReader, AmbianceduinoWriter):
+	pass
