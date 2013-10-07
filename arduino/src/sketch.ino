@@ -1,102 +1,137 @@
+/**
+ * AmbianceDuino.ino
+ * -----------------
+ * iTitou @ UrLab
+ * Released under the Creative Commons CC-BY 3.0 license.
+ * http://creativecommons.org/licenses/by/3.0/
+ */
+
+#include "animation.h"
+
+#define BAUDS 115200
+#define waitSerial() while(Serial.available()==0)
+
+/* ==== pinout ==== */
+#define BELL 4
 #define POWER1 2
-#define R1 3
-#define G1 5
-#define B1 6
+#define LEDS 5
+#define BUZZER 8
 
-static unsigned int analogs[6] = {0, 0, 0, 0, 0, 0};
-static int i;
+ static const char *analog_map[6] = {
+ 	"temp_radia", "light_out", "temp_amb", "light_in", "temp_lm35", "Analog5" 
+ };
 
-static void update_analogs();
+/* ==== Subroutines ==== */
 static void update_ledstrips();
 static void read_serial();
+static void door_bell_check();
 
+static int i, c;
+BufferedAnimation ledstrip(LEDS);
 
 /* ==== Arduino main ==== */
 void setup(){
-	pinMode(R1, OUTPUT);
-	pinMode(G1, OUTPUT);
-	pinMode(B1, OUTPUT);
-	Serial.begin(115200);
+	Serial.begin(BAUDS);
+	pinMode(BELL, INPUT);
 }
 
 void loop(){
 	read_serial();
 	update_ledstrips();
-	update_analogs();
+	door_bell_check();
 }
 
-/* ==== Read analogs ==== */
-static void update_analogs(){
-	for (i=0; i<6; i++) analogs[i] = analogRead(i);
+/* ==== Door & bell ==== */
+static bool ringtone_active = false;
+static int bell_state = LOW;
+static uint8_t ringtone_notes[] = {
+	0, 123, 0, 123, 0, 110, 0, 123, 123, 123, 0, 92, 92, 0, 0, 92, 0, 123, 
+	0, 164, 0, 155, 0, 123, 123, 123, 123, 123, 123, 123, 123, 123
+};
+static Animation ringtone(BUZZER, sizeof(ringtone_notes), ringtone_notes, 126);
+static Animation ringtone_leds(LEDS, 2);
+
+static void door_bell_check(){
+	int b = digitalRead(BELL);
+	if (ringtone_active){
+		ringtone.play_tone();
+		if (ringtone.loop() >= 2){
+			ringtone_active = false;
+			ringtone.reset_loop();
+			noTone(BUZZER);
+		}
+	}
+	if (b==HIGH && bell_state==LOW){
+		bell_state = b;
+		Serial.println("*");
+		ringtone_active = true;
+	} else if (b==LOW && bell_state==HIGH){
+		bell_state = b;
+	}
 }
+
 
 /* ==== Ledstrips animations ==== */
-static const unsigned char anim_sin[256]{
-	127, 131, 134, 137, 140, 143, 146, 149, 152, 155, 158, 162, 165, 168, 170, 
-	173, 176, 179, 182, 185, 188, 190, 193, 196, 198, 201, 204, 206, 209, 211, 
-	213, 216, 218, 220, 222, 224, 226, 228, 230, 232, 234, 235, 237, 239, 240, 
-	242, 243, 244, 246, 247, 248, 249, 250, 251, 251, 252, 253, 253, 254, 254, 
-	255, 255, 255, 255, 255, 255, 255, 255, 255, 254, 254, 253, 253, 252, 251, 
-	251, 250, 249, 248, 247, 246, 244, 243, 242, 240, 239, 237, 235, 234, 232, 
-	230, 228, 226, 224, 222, 220, 218, 216, 213, 211, 209, 206, 204, 201, 198, 
-	196, 193, 190, 188, 185, 182, 179, 176, 173, 170, 168, 165, 162, 158, 155, 
-	152, 149, 146, 143, 140, 137, 134, 131, 127, 124, 121, 118, 115, 112, 109, 
-	106, 102, 99, 96, 93, 90, 87, 84, 81, 78, 76, 73, 70, 67, 64, 62, 59, 56, 
-	54, 51, 49, 46, 44, 42, 39, 37, 35, 33, 31, 29, 27, 25, 23, 21, 19, 18, 16, 
-	15, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, 3, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 1, 1, 2, 3, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 16, 18, 19, 21, 23, 
-	25, 27, 29, 31, 33, 35, 37, 39, 42, 44, 46, 49, 51, 54, 56, 59, 62, 64, 67, 
-	70, 73, 76, 78, 81, 84, 87, 90, 93, 96, 99, 102, 106, 109, 112, 115, 118, 
-	121, 124
-};
-
 static bool ledstrip_power = false;
-static unsigned char anim_frame = 0;
-static unsigned char anim_delay = 25;
-static unsigned long last_frame_time = 0;
 
 static void update_ledstrips(){
-	unsigned long t = millis();
-	if (t-last_frame_time >= anim_delay){
-		anim_frame++;
-		last_frame_time = t;
-		analogWrite(R1, anim_sin[anim_frame]);
-		analogWrite(G1, anim_sin[(anim_frame+85)%0x100]);
-		analogWrite(B1, anim_sin[(anim_frame+170)%0x100]);
-	}
 	digitalWrite(POWER1, (ledstrip_power) ? HIGH : LOW);
+	if (ledstrip_power){
+		if (ringtone_active)
+			ringtone_leds.play();
+		else 
+			ledstrip.play();
+	} else {
+		analogWrite(LEDS, 0);
+	}
 }
-
 
 /* ==== Serial communication ==== */
 static void read_serial(){
 	if (Serial.available()){
 		switch (Serial.read()){
 			case '?':
-				Serial.println("jesuisuncanapequichante");
+				Serial.println("?jesuisuncanapequichante");
 				break;
 			case '-': 
 				ledstrip_power = true;  
-				Serial.println("powerup");
+				Serial.println("-");
 				break;
 			case '_': 
 				ledstrip_power = false; 
-				Serial.println("powerdown");
+				Serial.println("_");
 				break;
 			case '@':
-				Serial.print("[");
+				Serial.print("@{");
 				for (i=0; i<6; i++){
 					if (i>0) Serial.print(",");
-					Serial.print(analogs[i], DEC);
+					Serial.print("\"");
+					Serial.print(analog_map[i]);
+					Serial.print("\":");
+					Serial.print(analogRead(i), DEC);
 				}
-				Serial.println("]");
+				Serial.println("}");
 				break;
 			case '#':
-				if (Serial.available()) anim_delay = Serial.read();
-				Serial.print("delay=");
-				Serial.println(anim_delay, DEC);
+				waitSerial();
+				c = Serial.read();
+				if (c != 0)	ledstrip.set_delay(c);
+				Serial.print("#");
+				Serial.println(ledstrip.delay(), DEC);
 				break;
+			case 'R':
+				waitSerial();
+				if (Serial.available()){
+					ledstrip.setLength(Serial.read());
+					for (i=0; i<ledstrip.length(); i++){
+						waitSerial();
+						ledstrip[i] = Serial.read();
+					}
+					Serial.print("R");
+					Serial.println(i);
+				} else {
+					Serial.println("!R");
+				}
 		}
 	}
 }
-
