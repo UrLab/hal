@@ -43,7 +43,7 @@ class AmbianceDaemon(Ambianceduino):
 			if 'state' in payload:
 				if payload['state'] == 'open' and self.powered != True:
 					self.on()
-				elif payload['state'] == 'close' and self.powered != False:
+				elif payload['state'] == 'closed' and self.powered != False:
 					self.off()
 		except Exception as err:
 			LOG.error("%s: %s"%(err.__class__.__name__, err.message))
