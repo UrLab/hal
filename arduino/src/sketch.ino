@@ -14,7 +14,8 @@
 /* ==== pinout ==== */
 #define BELL 4
 #define POWER1 2
-#define LEDS 5
+#define LEDS_R 5
+#define LEDS_G 6
 #define BUZZER 8
 
  static const char *analog_map[6] = {
@@ -27,7 +28,8 @@ static void read_serial();
 static void door_bell_check();
 
 static int i, c;
-BufferedAnimation ledstrip(LEDS);
+BufferedAnimation ledstrip_r(LEDS_R);
+BufferedAnimation ledstrip_g(LEDS_G);
 
 /* ==== Arduino main ==== */
 void setup(){
@@ -49,7 +51,7 @@ static uint8_t ringtone_notes[] = {
 	0, 164, 0, 155, 0, 123, 123, 123, 123, 123, 123, 123, 123, 123
 };
 static Animation ringtone(BUZZER, sizeof(ringtone_notes), ringtone_notes, 126);
-static Animation ringtone_leds(LEDS, 2);
+static Animation ringtone_leds(LEDS_R, 2);
 
 static void door_bell_check(){
 	int b = digitalRead(BELL);
@@ -79,10 +81,13 @@ static void update_ledstrips(){
 	if (ledstrip_power){
 		if (ringtone_active)
 			ringtone_leds.play();
-		else 
-			ledstrip.play();
+		else {
+			ledstrip_r.play();
+			ledstrip_g.play();
+		}
 	} else {
-		analogWrite(LEDS, 0);
+		analogWrite(LEDS_R, 0);
+		analogWrite(LEDS_G, 0);
 	}
 }
 
@@ -115,22 +120,38 @@ static void read_serial(){
 			case '#':
 				waitSerial();
 				c = Serial.read();
-				if (c != 0)	ledstrip.set_delay(c);
+				if (c != 0){
+					ledstrip_r.set_delay(c);
+					ledstrip_g.set_delay(c);
+				}
 				Serial.print("#");
-				Serial.println(ledstrip.delay(), DEC);
+				Serial.println(ledstrip_r.delay(), DEC);
 				break;
 			case 'R':
 				waitSerial();
 				if (Serial.available()){
-					ledstrip.setLength(Serial.read());
-					for (i=0; i<ledstrip.length(); i++){
+					ledstrip_r.setLength(Serial.read());
+					for (i=0; i<ledstrip_r.length(); i++){
 						waitSerial();
-						ledstrip[i] = Serial.read();
+						ledstrip_r[i] = Serial.read();
 					}
 					Serial.print("R");
 					Serial.println(i);
 				} else {
 					Serial.println("!R");
+				}
+			case 'G':
+				waitSerial();
+				if (Serial.available()){
+					ledstrip_g.setLength(Serial.read());
+					for (i=0; i<ledstrip_g.length(); i++){
+						waitSerial();
+						ledstrip_g[i] = Serial.read();
+					}
+					Serial.print("G");
+					Serial.println(i);
+				} else {
+					Serial.println("!G");
 				}
 		}
 	}
