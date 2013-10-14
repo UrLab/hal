@@ -83,8 +83,8 @@ static void update_ledstrips(){
 			ringtone_leds.play();
 		else {
 			ledstrip_r.play();
-			ledstrip_g.play();
 		}
+		ledstrip_g.play();
 	} else {
 		analogWrite(LEDS_R, 0);
 		analogWrite(LEDS_G, 0);
