@@ -86,9 +86,11 @@ static void update_ledstrips(){
 			ledstrip_r.play();
 		}
 		if (digitalRead(PASSAGE) == LOW){
-            ledstrip_g.play();
+			ledstrip_g.play();
+			tone(BUZZER, 1000, 200);
 		} else {
-            analogWrite(LEDS_G, 0);
+			analogWrite(LEDS_G, 0);
+	
 		}
 	} else {
 		analogWrite(LEDS_R, 0);
