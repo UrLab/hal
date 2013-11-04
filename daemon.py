@@ -5,8 +5,11 @@ from math import log
 from datetime import datetime
 import json
 import puka
+from math import log
 
 import logging
+
+from config import *
 
 # create LOG
 LOG = logging.getLogger(__name__)
@@ -22,10 +25,12 @@ def avg_for_key(list_of_dictionaries, key):
 	"""
 	return sum([x[key] for x in list_of_dictionaries])/len(list_of_dictionaries)
 
+def convertThermistor(analogValue, resistance, beta):
+	vout = 5*analogValue/1023.0
+	r = resistance*(5-vout)/vout
+	return (beta/(log(r/resistance)+beta/298.15))-273.15
+
 class AmbianceDaemon(Ambianceduino):
-	AMQ_SERVER = "amqp://localhost/"
-	METEO_QUEUE = "api.meteo.feed"
-	METEO_LEN = 6
 
 	def __init__(self, *args, **kwargs):
 		super(AmbianceDaemon, self).__init__(*args, **kwargs)
@@ -35,14 +40,14 @@ class AmbianceDaemon(Ambianceduino):
 		self.__init_puka_client()
 
 	def __init_puka_client(self):
-		self.puka_client = puka.Client(self.AMQ_SERVER)
+		self.puka_client = puka.Client(AMQ_SERVER)
 		promise = self.puka_client.connect()
 		self.puka_client.wait(promise)
-		LOG.info("Connected AMQ to %s"%(self.AMQ_SERVER))
+		LOG.info("Connected AMQ to %s"%(AMQ_SERVER))
 
-		promise = self.puka_client.queue_declare(queue=self.METEO_QUEUE)
+		promise = self.puka_client.queue_declare(queue=METEO_QUEUE)
 		self.puka_client.wait(promise)
-		LOG.info("Got queue %s"%(self.METEO_QUEUE))
+		LOG.info("Got queue %s"%(METEO_QUEUE))
 
 	def default_handler(self, *args):
 		LOG.info(' '.join(map(str, args)))
@@ -64,7 +69,7 @@ class AmbianceDaemon(Ambianceduino):
 
 	def when_analogs(self, analogs):
 		self.meteo.append(analogs)
-		if len(self.meteo) == self.METEO_LEN:
+		if len(self.meteo) == METEO_LEN:
 			msg = {
 				'time': str(datetime.now()),
 				'light' : {
@@ -72,13 +77,13 @@ class AmbianceDaemon(Ambianceduino):
 					'outside': avg_for_key(self.meteo, 'light_out')/10.23
 				},
 				'temperature' : {
-					'radiator': avg_for_key(self.meteo, 'temp_radia')/10.23,
-					'ambiant': avg_for_key(self.meteo, 'temp_amb')/10.23
+					'radiator': convertThermistor(avg_for_key(self.meteo, 'temp_radia'), 4700, 3950),
+					'ambiant': convertThermistor(avg_for_key(self.meteo, 'temp_amb'), 2200, 3950)
 				}
 			}
 			promise = self.puka_client.basic_publish(
 				exchange='', 
-				routing_key=self.METEO_QUEUE,
+				routing_key=METEO_QUEUE,
 				body=json.dumps(msg)
 			)
 			self.meteo = []
