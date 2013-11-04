@@ -17,6 +17,7 @@
 #define LEDS_R 5
 #define LEDS_G 6
 #define BUZZER 8
+#define PASSAGE 12
 
  static const char *analog_map[6] = {
  	"temp_radia", "light_out", "temp_amb", "light_in", "temp_lm35", "Analog5" 
@@ -84,7 +85,11 @@ static void update_ledstrips(){
 		else {
 			ledstrip_r.play();
 		}
-		ledstrip_g.play();
+		if (digitalRead(PASSAGE) == LOW){
+            ledstrip_g.play();
+		} else {
+            analogWrite(LEDS_G, 0);
+		}
 	} else {
 		analogWrite(LEDS_R, 0);
 		analogWrite(LEDS_G, 0);
