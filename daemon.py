@@ -127,7 +127,7 @@ if __name__ == "__main__":
 	try:
 		a = AmbianceDaemon(boot_time=10)
 	except Exception as err:
-		LOG.error("%s: %s"%(err.__class__.__name__, err.message))
+		LOG.error("%s: %s"%(err.__class__.__name__, err))
 		exit(1)
 
 	LOG.info('Got Ambianceduino')
