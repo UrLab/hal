@@ -28,7 +28,8 @@ class AmbianceduinoFinder(object):
 		else:
 			possible_devices = [f for pattern in self.DEV_PATTERNS for f in glob(pattern)]
 			for device in possible_devices:
-				self.__try_device(device, boot_time)
+				try: self.__try_device(device, boot_time)
+				except: pass
 				if self.serial:
 					break
 		if not self.serial:
