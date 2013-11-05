@@ -50,6 +50,7 @@ class AmbianceDaemon(Ambianceduino):
 			self.puka_client.wait(promise)
 			LOG.info("Got queue %s"%(METEO_QUEUE))
 		except:
+			LOG.error("Unable to connect to %s#%s"%(AMQ_SERVER, METEO_QUEUE))
 			self.puka_client = None
 
 	def default_handler(self, *args):
