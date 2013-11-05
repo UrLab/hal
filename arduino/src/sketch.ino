@@ -7,6 +7,7 @@
  */
 
 #include "animation.h"
+#include "Trigger.h"
 
 #define BAUDS 115200
 #define waitSerial() while(Serial.available()==0)
@@ -17,6 +18,7 @@
 #define LEDS_R 5
 #define LEDS_G 6
 #define BUZZER 8
+#define DOOR 9
 #define PASSAGE 12
 
  static const char *analog_map[6] = {
@@ -35,7 +37,6 @@ BufferedAnimation ledstrip_g(LEDS_G);
 /* ==== Arduino main ==== */
 void setup(){
 	Serial.begin(BAUDS);
-	pinMode(BELL, INPUT);
 }
 
 void loop(){
@@ -45,8 +46,6 @@ void loop(){
 }
 
 /* ==== Door & bell ==== */
-static bool ringtone_active = false;
-static int bell_state = LOW;
 static uint8_t ringtone_notes[] = {
 	0, 123, 0, 123, 0, 110, 0, 123, 123, 123, 0, 92, 92, 0, 0, 92, 0, 123, 
 	0, 164, 0, 155, 0, 123, 123, 123, 123, 123, 123, 123, 123, 123
@@ -54,23 +53,20 @@ static uint8_t ringtone_notes[] = {
 static Animation ringtone(BUZZER, sizeof(ringtone_notes), ringtone_notes, 126);
 static Animation ringtone_leds(LEDS_R, 2);
 
+Trigger bell_trigger(BELL, LOW, 20000, '*');
+Trigger passage_trigger(PASSAGE, HIGH, 1000);
+Trigger door_trigger(DOOR, HIGH, 60000, '$');
+
 static void door_bell_check(){
-	int b = digitalRead(BELL);
-	if (ringtone_active){
+	if (bell_trigger.isActive()){
 		ringtone.play_tone();
 		if (ringtone.loop() >= 2){
-			ringtone_active = false;
+			bell_trigger.deactivate();
 			ringtone.reset_loop();
 			noTone(BUZZER);
 		}
 	}
-	if (b==HIGH && bell_state==LOW){
-		bell_state = b;
-		Serial.println("*");
-		ringtone_active = true;
-	} else if (b==LOW && bell_state==HIGH){
-		bell_state = b;
-	}
+	door_trigger.isActive();
 }
 
 
@@ -80,18 +76,15 @@ static bool ledstrip_power = false;
 static void update_ledstrips(){
 	digitalWrite(POWER1, (ledstrip_power) ? HIGH : LOW);
 	if (ledstrip_power){
-		if (ringtone_active)
+		if (bell_trigger.isActive())
 			ringtone_leds.play();
-		else {
+		else 
 			ledstrip_r.play();
-		}
-		if (digitalRead(PASSAGE) == LOW){
+
+		if (passage_trigger.isActive())
 			ledstrip_g.play();
-			//tone(BUZZER, 1000, 200);
-		} else {
+		else
 			analogWrite(LEDS_G, 0);
-	
-		}
 	} else {
 		analogWrite(LEDS_R, 0);
 		analogWrite(LEDS_G, 0);
