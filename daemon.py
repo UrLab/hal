@@ -9,7 +9,7 @@ from math import log
 
 import logging
 
-from config import *
+from config import AMQ_SERVER, METEO_QUEUE, METEO_LEN, EVENTS_QUEUE
 
 # create LOG
 LOG = logging.getLogger(__name__)
@@ -49,9 +49,24 @@ class AmbianceDaemon(Ambianceduino):
 			promise = self.puka_client.queue_declare(queue=METEO_QUEUE)
 			self.puka_client.wait(promise)
 			LOG.info("Got queue %s"%(METEO_QUEUE))
+
+			promise = self.puka_client.queue_declare(queue=EVENTS_QUEUE)
+			self.puka_client.wait(promise)
+			LOG.info("Got queue %s"%(EVENTS_QUEUE))
 		except:
 			LOG.error("Unable to connect to %s#%s"%(AMQ_SERVER, METEO_QUEUE))
 			self.puka_client = None
+
+	def __send_message(self, queue, json_dumpable):
+		if self.puka_client:
+			msg = json.dumps(json_dumpable)
+			promise = self.puka_client.basic_publish(
+				exchange='',
+				routing_key=queue,
+				body=msg
+			)
+			self.puka_client.wait(promise)
+			LOG.info('Sent [%s]>> %s'%(queue, msg[:50]))
 
 	def default_handler(self, *args):
 		LOG.info(' '.join(map(str, args)))
@@ -69,14 +84,19 @@ class AmbianceDaemon(Ambianceduino):
 		LOG.info('Delay set to %d'%(delay))
 
 	def when_bell(self):
-		LOG.info('Someone rings the bell')
+		self.__send_message(EVENTS_QUEUE, {
+			'trigger': 'bell', 'time': str(datetime.now())
+		})
+
+	def when_door(self):
+		self.__send_message(EVENTS_QUEUE, {
+			'trigger': 'door', 'time': str(datetime.now())
+		})
 
 	def when_analogs(self, analogs):
-		if not self.puka_client:
-			return 
 		self.meteo.append(analogs)
 		if len(self.meteo) == METEO_LEN:
-			msg = {
+			self.__send_message(METEO_QUEUE ,{
 				'time': str(datetime.now()),
 				'light' : {
 					'inside': avg_for_key(self.meteo, 'light_in')/10.23,
@@ -86,15 +106,8 @@ class AmbianceDaemon(Ambianceduino):
 					'radiator': convertThermistor(avg_for_key(self.meteo, 'temp_radia'), 4700, 3950),
 					'ambiant': convertThermistor(avg_for_key(self.meteo, 'temp_amb'), 2200, 3950)
 				}
-			}
-			promise = self.puka_client.basic_publish(
-				exchange='', 
-				routing_key=METEO_QUEUE,
-				body=json.dumps(msg)
-			)
+			})
 			self.meteo = []
-			self.puka_client.wait(promise)
-			LOG.info('Sent analog values')
 
 
 	def spacestatus(self):
