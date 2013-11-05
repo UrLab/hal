@@ -55,6 +55,8 @@ class AmbianceduinoReader(AmbianceduinoFinder):
 			self.when_anim(anim_length)
 		elif line[0] == '*':
 			self.when_bell()
+		elif line[0] == '$':
+			self.when_door()
 
 	def read_loop(self):
 		while self.running:
@@ -94,6 +96,9 @@ class AmbianceduinoReader(AmbianceduinoFinder):
 
 	def when_error(self, err_string):
 		self.default_handler("Error:", err_string)
+
+	def when_door(self):
+		self.default_handler("The door is open !")
 
 
 class AmbianceduinoWriter(AmbianceduinoFinder):
