@@ -40,14 +40,17 @@ class AmbianceDaemon(Ambianceduino):
 		self.__init_puka_client()
 
 	def __init_puka_client(self):
-		self.puka_client = puka.Client(AMQ_SERVER)
-		promise = self.puka_client.connect()
-		self.puka_client.wait(promise)
-		LOG.info("Connected AMQ to %s"%(AMQ_SERVER))
+		try:
+			self.puka_client = puka.Client(AMQ_SERVER)
+			promise = self.puka_client.connect()
+			self.puka_client.wait(promise)
+			LOG.info("Connected AMQ to %s"%(AMQ_SERVER))
 
-		promise = self.puka_client.queue_declare(queue=METEO_QUEUE)
-		self.puka_client.wait(promise)
-		LOG.info("Got queue %s"%(METEO_QUEUE))
+			promise = self.puka_client.queue_declare(queue=METEO_QUEUE)
+			self.puka_client.wait(promise)
+			LOG.info("Got queue %s"%(METEO_QUEUE))
+		except:
+			self.puka_client = None
 
 	def default_handler(self, *args):
 		LOG.info(' '.join(map(str, args)))
@@ -68,6 +71,8 @@ class AmbianceDaemon(Ambianceduino):
 		LOG.info('Someone rings the bell')
 
 	def when_analogs(self, analogs):
+		if not self.puka_client:
+			return 
 		self.meteo.append(analogs)
 		if len(self.meteo) == METEO_LEN:
 			msg = {
