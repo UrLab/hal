@@ -12,15 +12,18 @@ class AmbianceduinoNotFound(Exception):
 class AmbianceduinoFinder(object):
 	DEV_PATTERNS = ["/dev/ttyACM*", "/dev/ttyUSB*", "/dev/tty.usbmodem*"]
 
-	def __try_device(self, device, boot_time):
+	def __try_device(self, device, boot_time, tries=10):
 		self.serial = Serial(device, 115200, timeout=1)
 		sleep(boot_time) #Wait arduino boot
 		self.serial.write('?')
-		got = self.serial.readline()
-		#Magic string
-		if "?jesuisuncanapequichante" not in got:
-			self.serial.close()
-			self.serial = None
+		for i in range(tries):
+			got = self.serial.readline()
+			#Magic string
+			if "?jesuisuncanapequichante" not in got:
+				self.serial.close()
+				self.serial = None
+			else:
+				break
 
 	def __init__(self, device_path=None, boot_time=5):
 		if device_path:
