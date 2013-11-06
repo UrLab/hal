@@ -32,7 +32,6 @@ static void door_bell_check();
 
 static int i, c;
 BufferedAnimation ledstrip_r(LEDS_R);
-BufferedAnimation ledstrip_g(LEDS_G);
 
 /* ==== Arduino main ==== */
 void setup(){
@@ -50,8 +49,15 @@ static uint8_t ringtone_notes[] = {
 	0, 123, 0, 123, 0, 110, 0, 123, 123, 123, 0, 92, 92, 0, 0, 92, 0, 123, 
 	0, 164, 0, 155, 0, 123, 123, 123, 123, 123, 123, 123, 123, 123
 };
+
+static uint8_t door_flash[] = {
+	196, 213, 227, 239, 247, 253, 254, 253, 248, 239, 228, 214, 197, 179, 
+	159, 138, 117, 96, 76, 57, 41, 26, 15, 6, 1
+};
+
 static Animation ringtone(BUZZER, sizeof(ringtone_notes), ringtone_notes, 126);
 static Animation ringtone_leds(LEDS_R, 2);
+static Animation ledstrips_g(LEDS_G, sizeof(door_flash), door_flash, 500/sizeof(door_flash));
 
 Trigger bell_trigger(BELL, LOW, 20000, '*');
 Trigger passage_trigger(PASSAGE, HIGH, 1000);
@@ -79,12 +85,15 @@ static void update_ledstrips(){
 		if (bell_trigger.isActive())
 			ringtone_leds.play();
 		else 
-			ledstrip_r.play();
-
-		if (passage_trigger.isActive())
+			ledstrips_r.play();
+		if (passage_trigger.isActive()){
 			ledstrip_g.play();
-		else
-			analogWrite(LEDS_G, 0);
+			if (ledstrips_g.loop() >= 1){
+				passage_trigger.deactivate();
+				ledstrips_g.reset_loop();
+				analogWrite(LEDS_G, 0);
+			}
+		}
 	} else {
 		analogWrite(LEDS_R, 0);
 		analogWrite(LEDS_G, 0);
