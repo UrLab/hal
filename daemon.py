@@ -66,7 +66,7 @@ class AmbianceDaemon(Ambianceduino):
 				body=msg
 			)
 			self.puka_client.wait(promise)
-			LOG.info('Sent [%s]>> %s'%(queue, msg[:50]))
+			LOG.info('Sent [%s] << %s'%(queue, msg[:50]))
 
 	def default_handler(self, *args):
 		LOG.info(' '.join(map(str, args)))
