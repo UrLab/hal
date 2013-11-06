@@ -89,9 +89,10 @@ class AmbianceDaemon(Ambianceduino):
 		})
 
 	def when_door(self):
-		self.__send_message(EVENTS_QUEUE, {
-			'trigger': 'door', 'time': str(datetime.now())
-		})
+		if not self.powered:
+			self.__send_message(EVENTS_QUEUE, {
+				'trigger': 'door', 'time': str(datetime.now())
+			})
 
 	def when_analogs(self, analogs):
 		self.meteo.append(analogs)
