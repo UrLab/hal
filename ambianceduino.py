@@ -16,14 +16,16 @@ class AmbianceduinoFinder(object):
 		self.serial = Serial(device, 115200, timeout=1)
 		sleep(boot_time) #Wait arduino boot
 		self.serial.write('?')
+		done = False
 		for i in range(tries):
 			got = self.serial.readline()
 			#Magic string
-			if "?jesuisuncanapequichante" not in got:
-				self.serial.close()
-				self.serial = None
-			else:
+			if "?jesuisuncanapequichante" in got:
+				done = True
 				break
+		if not done:
+			self.serial.close()
+			self.serial = None
 
 	def __init__(self, device_path=None, boot_time=5):
 		if device_path:
