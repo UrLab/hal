@@ -149,19 +149,6 @@ static void read_serial(){
 				} else {
 					Serial.println("!R");
 				}
-			case 'G':
-				waitSerial();
-				if (Serial.available()){
-					ledstrip_g.setLength(Serial.read());
-					for (i=0; i<ledstrip_g.length(); i++){
-						waitSerial();
-						ledstrip_g[i] = Serial.read();
-					}
-					Serial.print("G");
-					Serial.println(i);
-				} else {
-					Serial.println("!G");
-				}
 		}
 	}
 }
