@@ -62,6 +62,8 @@ class AmbianceduinoReader(AmbianceduinoFinder):
 			self.when_bell()
 		elif line[0] == '$':
 			self.when_door()
+		elif line[0] == '&':
+			self.when_radiator()
 
 	def read_loop(self):
 		while self.running:
@@ -104,7 +106,9 @@ class AmbianceduinoReader(AmbianceduinoFinder):
 
 	def when_door(self):
 		self.default_handler("The door is open !")
-
+	
+	def when_radiator(self):
+		self.default_handler("The radiator is on !");
 
 class AmbianceduinoWriter(AmbianceduinoFinder):
 	def __request(self, req_bytes):

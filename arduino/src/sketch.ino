@@ -20,6 +20,7 @@
 #define BUZZER 8
 #define DOOR 9
 #define PASSAGE 12
+#define RADIATOR 13
 
  static const char *analog_map[6] = {
  	"temp_radia", "light_out", "temp_amb", "light_in", "temp_lm35", "Analog5" 
@@ -60,8 +61,9 @@ static Animation ringtone_leds(LEDS_R, 2);
 static Animation ledstrip_g(LEDS_G, sizeof(door_flash), door_flash, 500/sizeof(door_flash));
 
 Trigger bell_trigger(BELL, LOW, 20000, '*');
-Trigger passage_trigger(PASSAGE, HIGH, 1000, 10);
+Trigger passage_trigger(PASSAGE, HIGH, 1000, 0, 10);
 Trigger door_trigger(DOOR, HIGH, 60000, '$');
+Trigger radiator_trigger(RADIATOR, LOW, 10000, '&', 20);
 
 static void door_bell_check(){
 	if (bell_trigger.isActive()){
@@ -97,6 +99,7 @@ static void update_ledstrips(){
 	} else {
 		analogWrite(LEDS_R, 0);
 		analogWrite(LEDS_G, 0);
+		radiator_trigger.isActive();
 	}
 }
 

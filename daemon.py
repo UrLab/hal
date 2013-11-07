@@ -93,7 +93,12 @@ class AmbianceDaemon(Ambianceduino):
 			self.__send_message(EVENTS_QUEUE, {
 				'trigger': 'door', 'time': str(datetime.now())
 			})
-
+	
+	def when_radiator(self):
+		self.__send_message(EVENTS_QUEUE, {
+			'trigger': 'radiator', 'time': str(datetime.now())
+		})
+	
 	def when_analogs(self, analogs):
 		self.meteo.append(analogs)
 		if len(self.meteo) == METEO_LEN:
