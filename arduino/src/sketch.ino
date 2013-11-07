@@ -60,7 +60,7 @@ static Animation ringtone_leds(LEDS_R, 2);
 static Animation ledstrip_g(LEDS_G, sizeof(door_flash), door_flash, 500/sizeof(door_flash));
 
 Trigger bell_trigger(BELL, LOW, 20000, '*');
-Trigger passage_trigger(PASSAGE, HIGH, 1000);
+Trigger passage_trigger(PASSAGE, HIGH, 1000, 10);
 Trigger door_trigger(DOOR, HIGH, 60000, '$');
 
 static void door_bell_check(){
