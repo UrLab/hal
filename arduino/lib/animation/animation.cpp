@@ -1,8 +1,9 @@
 #include "Arduino.h"
 #include "animation.h"
 
-#define PREDEF_SIN_LEN 255
-static const unsigned char predefined_sin[PREDEF_SIN_LEN] = {
+#define PREDEF_SIN_LEN sizeof(predefined_sin)
+#
+static const unsigned char predefined_sin[] = {
 	127, 131, 134, 137, 140, 143, 146, 149, 152, 155, 158, 162, 165, 168, 170, 
 	173, 176, 179, 182, 185, 188, 190, 193, 196, 198, 201, 204, 206, 209, 211, 
 	213, 216, 218, 220, 222, 224, 226, 228, 230, 232, 234, 235, 237, 239, 240, 
@@ -22,7 +23,8 @@ static const unsigned char predefined_sin[PREDEF_SIN_LEN] = {
 };
 
 Animation::Animation(int pin, unsigned char delay):
-Animation::Animation(pin, PREDEF_SIN_LEN, (unsigned char *) predefined_sin, delay)
+__pin(pin), __len(PREDEF_SIN_LEN), __curve((unsigned char*)predefined_sin), 
+__delay(delay), __t(0), __frame_index(0), __loop(0)
 {}
 
 Animation::Animation(int pin, unsigned char len, unsigned char *curve, unsigned char delay): 
