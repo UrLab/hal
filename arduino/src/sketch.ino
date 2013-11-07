@@ -84,6 +84,8 @@ static bool ledstrip_power = false;
 static void update_ledstrips(){
 	digitalWrite(POWER1, (ledstrip_power) ? HIGH : LOW);
 	if (ledstrip_power){
+		/* Ignore radiator events if in powered mode */
+		radiator_trigger.deactivate();
 		if (bell_trigger.isActive())
 			ringtone_leds.play();
 		else 
