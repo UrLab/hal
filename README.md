@@ -45,5 +45,7 @@ Pour récupérer les informations envoyées par l'ambianceduino, il faut utilise
  * when_delay(n) appelé lorsque l'arduino envoie le délai actuel de l'animation des leds
  * when_anim(n) appelée lorsqu'une animation de leds a bien été reçue par l'arduino (paramètre: longueur de  l'animation reçue)
  * when_bell() appelée lorsque la sonnette est pressée
+ * when_door() appelée lorsque la porte des escaliers est ouverte
+ * when_radiator() appelée lorsque la vanne du radiateur est ouverte et que l'alimentation est éteinte (le radiateur est allumé mais le hackerspace est fermé)
  * when_analogs(v) appelée lorsque les valeurs des entrées analogiques sont envoyées (paramètre: dictionnaire des entrées analogiques)
  * when_error(m) appelée lorsqu'un message d'erreur est reçu (paramètre: message)
