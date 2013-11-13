@@ -56,8 +56,8 @@ static uint8_t door_flash[] = {
 
 static int i, c;
 static BufferedAnimation ledstrip_r(LEDS_R);
+static BufferedAnimation ledstrip_b(LEDS_B);
 
-static Animation ledstrip_b(LEDS_B);
 static Animation ledstrip_g(LEDS_G, sizeof(door_flash), door_flash, 500/sizeof(door_flash));
 
 static Animation ringtone(BUZZER, sizeof(ringtone_notes), ringtone_notes, 126);
@@ -159,6 +159,21 @@ static void read_serial(){
 				} else {
 					Serial.println("!R");
 				}
+				break;
+			case 'B':
+				waitSerial();
+				if (Serial.available()){
+					ledstrip_b.setLength(Serial.read());
+					for (i=0; i<ledstrip_b.length(); i++){
+						waitSerial();
+						ledstrip_b[i] = Serial.read();
+					}
+					Serial.print("B");
+					Serial.println(i);
+				} else {
+					Serial.println("!B");
+				}
+				break;
 		}
 	}
 }

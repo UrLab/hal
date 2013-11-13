@@ -114,6 +114,8 @@ class AmbianceduinoWriter(AmbianceduinoFinder):
 	def __request(self, req_bytes):
 		self.serial.write(req_bytes)
 
+
+
 	def delay(self, delay=1):
 		query = '#'
 		if delay in range(1, 256):
@@ -125,11 +127,12 @@ class AmbianceduinoWriter(AmbianceduinoFinder):
 	def analogs(self):
 		self.__request('@')
 
-	def upload_anim(self, curve):
+	def upload_anim(self, anim_name, curve):
+		assert anim_name == 'R' or anim_name == 'B'
 		dots = []
 		for dot in curve:
 			if 0 <= dot < 256: dots.append(chr(dot))
-		self.__request('R' + chr(len(dots)) + ''.join(dots))
+		self.__request(anim_name + chr(len(dots)) + ''.join(dots))
 
 	def on(self):
 		self.__request('-')
