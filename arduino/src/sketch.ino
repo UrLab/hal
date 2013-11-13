@@ -64,7 +64,7 @@ static Animation ringtone(BUZZER, sizeof(ringtone_notes), ringtone_notes, 126);
 static Animation ringtone_leds(LEDS_R, 2);
 
 Trigger bell_trigger(BELL, LOW, 20000, '*');
-Trigger passage_trigger(PASSAGE, HIGH, 1000, 0, 10);
+Trigger passage_trigger(PASSAGE, HIGH, 1000, 0, 20);
 Trigger door_trigger(DOOR, HIGH, 60000, '$');
 Trigger radiator_trigger(RADIATOR, LOW, 10000, '&', 20);
 
