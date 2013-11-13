@@ -19,6 +19,7 @@
 #define LEDS_G 6
 #define BUZZER 8
 #define DOOR 9
+#define LEDS_B 10
 #define PASSAGE 12
 #define RADIATOR 13
 
@@ -54,11 +55,13 @@ static uint8_t door_flash[] = {
 };
 
 static int i, c;
-BufferedAnimation ledstrip_r(LEDS_R);
+static BufferedAnimation ledstrip_r(LEDS_R);
+
+static Animation ledstrip_b(LEDS_B);
+static Animation ledstrip_g(LEDS_G, sizeof(door_flash), door_flash, 500/sizeof(door_flash));
 
 static Animation ringtone(BUZZER, sizeof(ringtone_notes), ringtone_notes, 126);
 static Animation ringtone_leds(LEDS_R, 2);
-static Animation ledstrip_g(LEDS_G, sizeof(door_flash), door_flash, 500/sizeof(door_flash));
 
 Trigger bell_trigger(BELL, LOW, 20000, '*');
 Trigger passage_trigger(PASSAGE, HIGH, 1000, 0, 10);
@@ -86,6 +89,7 @@ static void update_ledstrips(){
 	if (ledstrip_power){
 		/* Ignore radiator events if in powered mode */
 		radiator_trigger.deactivate();
+		ledstrip_b.play();
 		if (bell_trigger.isActive())
 			ringtone_leds.play();
 		else 
@@ -101,6 +105,7 @@ static void update_ledstrips(){
 	} else {
 		analogWrite(LEDS_R, 0);
 		analogWrite(LEDS_G, 0);
+		analogWrite(LEDS_B, 0);
 		radiator_trigger.isActive();
 	}
 }
