@@ -40,12 +40,12 @@ try:
                         ord(sound.read(1))
                     except:
                         exit()
-                    samples[i] = (msb&0x3f) - (msb&0x80) #2's complement
+                    samples[i] = (msb&0x7f) - (msb&0x80) #2's complement
                 res = numpy.fft.fft(samples)
                 n = len(res)
                 t = n/2
-                pack_r[j] = int(numpy.absolute(sum(res[:t])/n))
-                pack_b[j] = int(numpy.absolute(sum(res[t:])/n))
+                pack_r[j] = int(numpy.absolute(sum(res[:t])/n))/2
+                pack_b[j] = int(numpy.absolute(sum(res[t:])/n))/2
             print "---"
             a.upload_anim('R', pack_r)
             a.upload_anim('B', pack_b)
