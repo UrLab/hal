@@ -12,6 +12,8 @@ audio_output {
 
 import numpy
 from ambianceduino import Ambianceduino
+import traceback
+from math import log
 
 AUDIO_SAMPLE_RATE = 44100
 LEDS_FPS = 50
@@ -44,11 +46,10 @@ try:
                 res = numpy.fft.fft(samples)
                 n = len(res)
                 t = n/2
-                pack_r[j] = int(numpy.absolute(sum(res[:t])/n))/2
-                pack_b[j] = int(numpy.absolute(sum(res[t:])/n))/2
+                pack_r[j] = int(log(numpy.absolute(sum(res)/n)))
             print "---"
             a.upload_anim('R', pack_r)
-            a.upload_anim('B', pack_b)
-            print("%3d %3d"%(pack_r[-1], pack_b[-1]))
+            print("%3d"%(pack_r[-1]))
 except:
+    traceback.print_exc()
     a.off()
