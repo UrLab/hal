@@ -1,4 +1,4 @@
-from ambianceduino import Ambianceduino, AmbianceduinoNotFound
+from ambianceduino import Ambianceduino
 from urllib import urlopen
 from time import sleep
 from math import log

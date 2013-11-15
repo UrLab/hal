@@ -56,8 +56,8 @@ static uint8_t door_flash[] = {
 
 static int i, c;
 static BufferedAnimation ledstrip_r(LEDS_R);
+static BufferedAnimation ledstrip_b(LEDS_B);
 
-static Animation ledstrip_b(LEDS_B);
 static Animation ledstrip_g(LEDS_G, sizeof(door_flash), door_flash, 500/sizeof(door_flash));
 
 static Animation ringtone(BUZZER, sizeof(ringtone_notes), ringtone_notes, 126);
@@ -115,7 +115,7 @@ static void read_serial(){
 	if (Serial.available()){
 		switch (Serial.read()){
 			case '?':
-				Serial.println("?ad338b356480354a2cbc50adcfacc7ea97051cb3");
+				Serial.println("?{{version}}");
 				break;
 			case '-': 
 				ledstrip_power = true;  
@@ -141,10 +141,14 @@ static void read_serial(){
 				c = Serial.read();
 				if (c != 0){
 					ledstrip_r.set_delay(c);
-					ledstrip_g.set_delay(c);
+					ledstrip_b.set_delay(c);
 				}
 				Serial.print("#");
 				Serial.println(ledstrip_r.delay(), DEC);
+				break;
+			case '%':
+				ledstrip_r.resetDefault();
+				ledstrip_b.resetDefault();
 				break;
 			case 'R':
 				waitSerial();
@@ -159,6 +163,21 @@ static void read_serial(){
 				} else {
 					Serial.println("!R");
 				}
+				break;
+			case 'B':
+				waitSerial();
+				if (Serial.available()){
+					ledstrip_b.setLength(Serial.read());
+					for (i=0; i<ledstrip_b.length(); i++){
+						waitSerial();
+						ledstrip_b[i] = Serial.read();
+					}
+					Serial.print("B");
+					Serial.println(i);
+				} else {
+					Serial.println("!B");
+				}
+				break;
 		}
 	}
 }
