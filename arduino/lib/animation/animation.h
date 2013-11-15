@@ -34,6 +34,7 @@ class BufferedAnimation : public Animation {
 	public:
 		explicit BufferedAnimation(int pin);
 		unsigned char & operator[](unsigned char offset);
+		void resetDefault();
 };
 
 #endif
