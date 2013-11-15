@@ -2,3 +2,4 @@ ino
 pyserial
 ipython
 puka
+numpy
