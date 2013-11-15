@@ -141,7 +141,7 @@ static void read_serial(){
 				c = Serial.read();
 				if (c != 0){
 					ledstrip_r.set_delay(c);
-					ledstrip_b.set_delay(c);
+					//ledstrip_b.set_delay(c);
 				}
 				Serial.print("#");
 				Serial.println(ledstrip_r.delay(), DEC);
