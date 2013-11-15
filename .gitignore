@@ -3,3 +3,5 @@ ve/
 *.pyc
 *.o
 *.log
+arduino/src/sketch.ino
+version.py
