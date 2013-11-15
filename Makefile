@@ -19,6 +19,4 @@ arduino/.build/uno/firmware.hex: arduino/src/sketch.ino
 
 clean:
 	rm -f arduino/src/sketch.ino version.py
-	cd arduino
-	ino clean
-	cd -
+	cd arduino && ino clean
