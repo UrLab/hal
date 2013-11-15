@@ -114,8 +114,6 @@ class AmbianceduinoWriter(AmbianceduinoFinder):
 	def __request(self, req_bytes):
 		self.serial.write(req_bytes)
 
-
-
 	def delay(self, delay=1):
 		query = '#'
 		if delay in range(1, 256):
@@ -133,7 +131,10 @@ class AmbianceduinoWriter(AmbianceduinoFinder):
 		for dot in curve:
 			if 0 <= dot < 256: dots.append(chr(dot))
 		self.__request(anim_name + chr(len(dots)) + ''.join(dots))
-
+    
+    def reset_anims(self):
+        self.__request('%')
+    
 	def on(self):
 		self.__request('-')
 

@@ -146,6 +146,10 @@ static void read_serial(){
 				Serial.print("#");
 				Serial.println(ledstrip_r.delay(), DEC);
 				break;
+			case '%':
+				ledstrip_r.resetDefault();
+				ledstrip_b.resetDefault();
+				break;
 			case 'R':
 				waitSerial();
 				if (Serial.available()){
