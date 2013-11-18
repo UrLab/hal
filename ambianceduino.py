@@ -25,7 +25,6 @@ class AmbianceduinoFinder(object):
             got = self.serial.readline().strip()
             #Magic string
             if got and got[0] == '?':
-                print got[1:], FIRMWARE_VERSION
                 if got[1:] == FIRMWARE_VERSION:
                     done = True
                     break
