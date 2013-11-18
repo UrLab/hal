@@ -22,9 +22,9 @@ class AmbianceduinoFinder(object):
         self.serial.write('?')
         done = False
         for i in range(tries):
-            got = self.serial.readline()
+            got = self.serial.readline().strip()
             #Magic string
-            if got[0] == '?':
+            if got and got[0] == '?':
                 if got[1:] == FIRMWARE_VERSION:
                     done = True
                     break
@@ -40,8 +40,7 @@ class AmbianceduinoFinder(object):
         else:
             possible_devices = [f for pattern in self.DEV_PATTERNS for f in glob(pattern)]
             for device in possible_devices:
-                try: self.__try_device(device, boot_time)
-                except: pass
+                self.__try_device(device, boot_time)
                 if self.serial:
                     break
         if not self.serial:
