@@ -1,11 +1,11 @@
 from ambianceduino import Ambianceduino
 from urllib import urlopen
-from time import sleep
 from math import log
 from datetime import datetime
 import json
 import puka
-from math import log
+from math import log, sqrt
+from time import sleep
 
 import logging
 
@@ -18,6 +18,11 @@ handler = logging.FileHandler('daemon.log')
 handler.setLevel(logging.DEBUG)
 handler.setFormatter(logging.Formatter('[%(asctime)s] <%(levelname)s> %(name)s: %(message)s'))
 LOG.addHandler(handler)
+
+def getMsbFromAudio(audio_source):
+	msb = ord(audio_source.read(1))
+	audio_source.read(1)
+	return (msb&0x7f) - (msb&0x80) #2's complement
 
 def avg_for_key(list_of_dictionaries, key):
 	"""
@@ -38,7 +43,30 @@ class AmbianceDaemon(Ambianceduino):
 		self.powered = None
 		self.meteo = []
 		self.__init_puka_client()
-
+    
+    def __spacestatus(self):
+		try:
+			statuspage = urlopen('http://api.urlab.be/spaceapi/status')
+			payload = json.loads(statuspage.read())
+			if 'state' in payload:
+				if payload['state'] == 'open' and self.powered != True:
+					self.on()
+				elif payload['state'] == 'closed' and self.powered != False:
+					self.off()
+		except Exception as err:
+			LOG.error("%s: %s"%(err.__class__.__name__, err.message))
+    
+	def __peoplecount(self):
+		try:
+			pamelapage = urlopen('http://pamela.urlab.be/mac.json')
+			payload = json.loads(pamelapage.read())
+			people = len(payload['color']) + len(payload['grey'])
+			d = int(25/log(people+2))
+			if d != self.current_delay:
+				self.delay(d)
+		except Exception as err:
+			LOG.error("%s: %s"%(err.__class__.__name__, err.message))
+    
 	def __init_puka_client(self):
 		try:
 			self.puka_client = puka.Client(AMQ_SERVER)
@@ -67,7 +95,15 @@ class AmbianceDaemon(Ambianceduino):
 			)
 			self.puka_client.wait(promise)
 			LOG.info('Sent [%s] << %s'%(queue, msg[:50]))
-
+            
+    def __http_requests(self):
+		while True:
+			self.analogs()
+			sleep(10)
+			self.spacestatus()
+			self.peoplecount()
+			sleep(10)
+    
 	def default_handler(self, *args):
 		LOG.info(' '.join(map(str, args)))
 
@@ -115,38 +151,23 @@ class AmbianceDaemon(Ambianceduino):
 			})
 			self.meteo = []
 
-
-	def spacestatus(self):
-		try:
-			statuspage = urlopen('http://api.urlab.be/spaceapi/status')
-			payload = json.loads(statuspage.read())
-			if 'state' in payload:
-				if payload['state'] == 'open' and self.powered != True:
-					self.on()
-				elif payload['state'] == 'closed' and self.powered != False:
-					self.off()
-		except Exception as err:
-			LOG.error("%s: %s"%(err.__class__.__name__, err.message))
-
-	def peoplecount(self):
-		try:
-			pamelapage = urlopen('http://pamela.urlab.be/mac.json')
-			payload = json.loads(pamelapage.read())
-			people = len(payload['color']) + len(payload['grey'])
-			d = int(25/log(people+2))
-			if d != self.current_delay:
-				self.delay(d)
-		except Exception as err:
-			LOG.error("%s: %s"%(err.__class__.__name__, err.message))
-
 	def mainloop(self):
-		while True:
-			self.spacestatus()
-			self.peoplecount()
-			self.analogs()
-			sleep(10)
-			self.analogs()
-			sleep(10)
+		SAMPLES_PER_FRAME = 25
+		AUDIO_SAMPLE_RATE = 44100
+		FRAMES_PER_SECOND = 14
+		SAMPLES_TO_DROP = (AUDIO_SAMPLE_RATE/FRAMES_PER_SECOND)-SAMPLES_PER_FRAME
+		tick = 0
+		with open("/tmp/mpd.fifo", "rb") as sound:
+			while True:
+				sound.read(SAMPLES_TO_DROP*2)
+				s = 0
+				for i in range(SAMPLES_PER_FRAME):
+					s += getMsbFromAudio(sound)**2
+				x = sqrt(s/SAMPLES_PER_FRAME)
+				self.upload_anim([int(1.0446300614125956**x)-1])
+				tick += 1
+				if tick
+			
 
 if __name__ == "__main__":
 	try:

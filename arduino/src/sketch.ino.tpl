@@ -23,9 +23,9 @@
 #define PASSAGE 12
 #define RADIATOR 13
 
- static const char *analog_map[6] = {
- 	"temp_radia", "light_out", "temp_amb", "light_in", "temp_lm35", "Analog5" 
- };
+static const char *analog_map[6] = {
+	"temp_radia", "light_out", "temp_amb", "light_in", "temp_lm35", "Analog5" 
+};
 
 /* ==== Subroutines ==== */
 static void update_ledstrips();
