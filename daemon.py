@@ -35,6 +35,7 @@ class AmbianceDaemon(Ambianceduino):
         self.powered = None
         self.meteo = []
         self.__init_puka_client()
+        self.anims_uploaded = 0
     
     def __spacestatus(self):
         try:
@@ -137,6 +138,9 @@ class AmbianceDaemon(Ambianceduino):
         self.__send_message(EVENTS_QUEUE, {
             'trigger': 'radiator', 'time': str(datetime.now())
         })
+
+    def when_anim(self, anim_name, anim_length):
+        self.anims_uploaded += 1
     
     def when_analogs(self, analogs):
         self.meteo.append(analogs)
@@ -167,12 +171,11 @@ class AmbianceDaemon(Ambianceduino):
                     s += getMsbFromAudio(sound)**2
                 x = sqrt(s/SAMPLES_PER_FRAME)
                 self.upload_anim('B', [int(1.0446300614125956**x)-1])
-            
 
 if __name__ == "__main__":
 
-    log_handler = FileHandler('daemon.log')
-    log_handler.push_application()
+    # log_handler = FileHandler('daemon.log')
+    # log_handler.push_application()
     logger = Logger('Main')
     logger.info('Starting')
     
