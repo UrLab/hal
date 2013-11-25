@@ -5,3 +5,4 @@ ve/
 *.log
 arduino/src/sketch.ino
 version.py
+config.py

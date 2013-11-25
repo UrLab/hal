@@ -101,8 +101,8 @@ class AmbianceDaemon(Ambianceduino):
 		while self.running:
 			self.analogs()
 			sleep(10)
-			self.spacestatus()
-			self.peoplecount()
+			self.__spacestatus()
+			self.__peoplecount()
 			sleep(10)
 	
 	def stop(self):
