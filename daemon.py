@@ -8,7 +8,7 @@ from time import sleep
 from threading import Thread
 from logbook import Logger, FileHandler
 
-from config import AMQ_SERVER, METEO_QUEUE, METEO_LEN, EVENTS_QUEUE
+from config import *
 
 def getMsbFromAudio(audio_source):
     msb = ord(audio_source.read(1))
@@ -39,7 +39,7 @@ class AmbianceDaemon(Ambianceduino):
     
     def __spacestatus(self):
         try:
-            statuspage = urlopen('http://api.urlab.be/spaceapi/status')
+            statuspage = urlopen(STATUS_URL)
             payload = json.loads(statuspage.read())
             if 'state' in payload:
                 if payload['state'] == 'open' and self.powered != True:
