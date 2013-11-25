@@ -15,7 +15,7 @@
 
 /* ==== pinout ==== */
 #define BELL 4
-#define POWER1 2
+#define POWER 2
 #define LEDS_R 5
 #define LEDS_G 6
 #define BUZZER 8
@@ -86,10 +86,9 @@ static void door_bell_check(){
 static bool ledstrip_power = false;
 
 static void update_ledstrips(){
-	digitalWrite(POWER1, (ledstrip_power) ? HIGH : LOW);
+	digitalWrite(POWER, (ledstrip_power) ? HIGH : LOW);
+	
 	if (ledstrip_power){
-		/* Ignore radiator events if in powered mode */
-		radiator_trigger.deactivate();
 		ledstrip_b.play();
 		if (bell_trigger.isActive())
 			ringtone_leds.play();
