@@ -44,6 +44,7 @@ class AmbianceDaemon(Ambianceduino):
 		self.powered = None
 		self.meteo = []
 		self.__init_puka_client()
+		self.anims_uploaded = 0
     
 	def __spacestatus(self):
 		try:
@@ -116,6 +117,9 @@ class AmbianceDaemon(Ambianceduino):
     
 	def default_handler(self, *args):
 		LOG.info(' '.join(map(str, args)))
+	
+	def when_anim(self, anim_name, anim_length):
+		self.anims_uploaded += 1
 
 	def when_on(self):
 		self.powered = True
