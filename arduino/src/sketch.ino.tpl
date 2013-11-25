@@ -11,6 +11,7 @@
 
 #define BAUDS 115200
 #define waitSerial() while(Serial.available()==0)
+#define FIRMWARE_VERSION "{{version}}"
 
 /* ==== pinout ==== */
 #define BELL 4
@@ -63,10 +64,10 @@ static Animation ledstrip_g(LEDS_G, sizeof(door_flash), door_flash, 500/sizeof(d
 static Animation ringtone(BUZZER, sizeof(ringtone_notes), ringtone_notes, 126);
 static Animation ringtone_leds(LEDS_R, 2);
 
-Trigger bell_trigger(BELL, LOW, 20000, '*');
-Trigger passage_trigger(PASSAGE, HIGH, 1000, 0, 20);
-Trigger door_trigger(DOOR, HIGH, 60000, '$');
-Trigger radiator_trigger(RADIATOR, LOW, 10000, '&', 20);
+Trigger bell_trigger(BELL, LOW, 20000, "bell");
+Trigger passage_trigger(PASSAGE, HIGH, 1000, "passage", 20);
+Trigger door_trigger(DOOR, HIGH, 60000, "door");
+Trigger radiator_trigger(RADIATOR, LOW, 10000, "radiator", 20);
 
 static void door_bell_check(){
 	if (bell_trigger.isActive()){
@@ -115,7 +116,7 @@ static void read_serial(){
 	if (Serial.available()){
 		switch (Serial.read()){
 			case '?':
-				Serial.println("?{{version}}");
+				Serial.println("?"FIRMWARE_VERSION);
 				break;
 			case '-': 
 				ledstrip_power = true;  

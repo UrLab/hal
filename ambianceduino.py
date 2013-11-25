@@ -52,6 +52,10 @@ class AmbianceduinoReader(AmbianceduinoFinder):
         if line[0] == '#':
             delay = int(line[1:])
             self.when_delay(delay)
+        elif line[0] == 'T':
+            active = bool(int(line[-1]))
+            name = line[1:-1]
+            self.when_trigger(name, active)
         elif line[0] == '@':
             analogs = json.loads(line[1:])
             self.when_analogs(analogs)
@@ -64,12 +68,6 @@ class AmbianceduinoReader(AmbianceduinoFinder):
         elif line[0] in ['R', 'B']:
             anim_length = int(line[1:])
             self.when_anim(line[0], anim_length)
-        elif line[0] == '*':
-            self.when_bell()
-        elif line[0] == '$':
-            self.when_door()
-        elif line[0] == '&':
-            self.when_radiator()
 
     def read_loop(self):
         while self.running:
@@ -88,6 +86,15 @@ class AmbianceduinoReader(AmbianceduinoFinder):
 
     def default_handler(self, *args):
         print ' '.join(map(str, args))
+
+    def when_trigger(self, name, active):
+        if active:
+            if name == 'door':
+                self.when_door()
+            elif name == 'bell':
+                self.when_bell()
+            elif name == 'radiator':
+                self.when_radiator()
 
     def when_delay(self, delay):
         self.default_handler("Delay:", delay)
