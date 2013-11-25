@@ -6,6 +6,7 @@ import json
 import puka
 from math import log, sqrt
 from time import sleep
+from threading import Thread
 
 import logging
 
@@ -44,7 +45,7 @@ class AmbianceDaemon(Ambianceduino):
 		self.meteo = []
 		self.__init_puka_client()
     
-    def __spacestatus(self):
+	def __spacestatus(self):
 		try:
 			statuspage = urlopen('http://api.urlab.be/spaceapi/status')
 			payload = json.loads(statuspage.read())
@@ -96,13 +97,22 @@ class AmbianceDaemon(Ambianceduino):
 			self.puka_client.wait(promise)
 			LOG.info('Sent [%s] << %s'%(queue, msg[:50]))
             
-    def __http_requests(self):
-		while True:
+	def __http_requests(self):
+		while self.running:
 			self.analogs()
 			sleep(10)
 			self.spacestatus()
 			self.peoplecount()
 			sleep(10)
+	
+	def stop(self):
+		super(AmbianceDaemon, self).stop()
+		self.requestsThread.join()
+	
+	def run(self):
+		super(AmbianceDaemon, self).run()
+		self.requestsThread = Thread(target=self.__http_requests)
+		self.requestsThread.start()
     
 	def default_handler(self, *args):
 		LOG.info(' '.join(map(str, args)))
@@ -163,7 +173,7 @@ class AmbianceDaemon(Ambianceduino):
 				for i in range(SAMPLES_PER_FRAME):
 					s += getMsbFromAudio(sound)**2
 				x = sqrt(s/SAMPLES_PER_FRAME)
-				self.upload_anim([int(1.0446300614125956**x)-1])
+				self.upload_anim('B', [int(1.0446300614125956**x)-1])
 			
 
 if __name__ == "__main__":
