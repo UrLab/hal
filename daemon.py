@@ -92,11 +92,11 @@ class AmbianceDaemon(Ambianceduino):
     def __http_requests(self):
         i = 0
         while self.running:
-            i = (i + 1) % 20
             self.analogs()
             if i == 0:
                 self.__spacestatus()
                 self.__peoplecount()
+            i = (i + 1) % 20
             sleep(1)
     
     def stop(self):
