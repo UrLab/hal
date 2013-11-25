@@ -61,9 +61,9 @@ class AmbianceduinoReader(AmbianceduinoFinder):
             self.when_on()
         elif line[0] == '_':
             self.when_off()
-        elif line[0] == 'R':
+        elif line[0] in ['R', 'B']:
             anim_length = int(line[1:])
-            self.when_anim(anim_length)
+            self.when_anim(line[0], anim_length)
         elif line[0] == '*':
             self.when_bell()
         elif line[0] == '$':
@@ -95,8 +95,8 @@ class AmbianceduinoReader(AmbianceduinoFinder):
     def when_analogs(self, analogs):
         self.default_handler("Analogs:", analogs)
 
-    def when_anim(self, anim_length):
-        self.default_handler("Animation length:", anim_length)
+    def when_anim(self, anim_name, anim_length):
+        self.default_handler("Uploaded ", anim_name, " len:", anim_length)
 
     def when_bell(self):
         self.default_handler("Someone ring the bell !!!")

@@ -156,7 +156,6 @@ class AmbianceDaemon(Ambianceduino):
 		AUDIO_SAMPLE_RATE = 44100
 		FRAMES_PER_SECOND = 14
 		SAMPLES_TO_DROP = (AUDIO_SAMPLE_RATE/FRAMES_PER_SECOND)-SAMPLES_PER_FRAME
-		tick = 0
 		with open("/tmp/mpd.fifo", "rb") as sound:
 			while True:
 				sound.read(SAMPLES_TO_DROP*2)
@@ -165,8 +164,6 @@ class AmbianceDaemon(Ambianceduino):
 					s += getMsbFromAudio(sound)**2
 				x = sqrt(s/SAMPLES_PER_FRAME)
 				self.upload_anim([int(1.0446300614125956**x)-1])
-				tick += 1
-				if tick
 			
 
 if __name__ == "__main__":
