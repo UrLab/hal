@@ -36,6 +36,12 @@ class AmbianceDaemon(Ambianceduino):
         self.meteo = []
         self.__init_puka_client()
         self.anims_uploaded = 0
+
+    def delay_red(self, milliseconds):
+        self.delay('R', milliseconds)
+
+    def delay_blue(self, milliseconds):
+        self.delay('B', milliseconds)
     
     def __spacestatus(self):
         try:
@@ -56,7 +62,7 @@ class AmbianceDaemon(Ambianceduino):
             people = len(payload['color']) + len(payload['grey'])
             d = int(25/log(people+2))
             if d != self.current_delay:
-                self.delay(d)
+                self.delay_red(d)
         except Exception as err:
             self.logger.error("%s: %s"%(err.__class__.__name__, err.message))
     
@@ -119,9 +125,12 @@ class AmbianceDaemon(Ambianceduino):
         self.powered = False
         self.logger.info('Powered off')
 
-    def when_delay(self, delay):
-        self.current_delay = delay
-        self.logger.info('Delay set to %d'%(delay))
+    def when_delay(self, output, delay):
+        if output == 'R':
+            self.current_delay = delay
+            self.logger.info('Delay RED set to %d'%(delay))
+        elif output == 'B':
+            self.logger.info('Delay BLUE set to %d'%(delay))
 
     def when_bell(self):
         self.__send_message(EVENTS_QUEUE, {
@@ -180,7 +189,7 @@ if __name__ == "__main__":
     logger.info('Starting')
     
     try:
-        a = AmbianceDaemon(boot_time=10)
+        a = AmbianceDaemon(boot_time=2)
     except Exception as err:
         logger.error("%s: %s"%(err.__class__.__name__, err))
         exit(1)

@@ -56,13 +56,14 @@ static uint8_t door_flash[] = {
 };
 
 static int i, c;
+static char command, subcommand;
 static BufferedAnimation ledstrip_r(LEDS_R);
 static BufferedAnimation ledstrip_b(LEDS_B);
 
 static Animation ledstrip_g(LEDS_G, sizeof(door_flash), door_flash, 500/sizeof(door_flash));
-
 static Animation ringtone(BUZZER, sizeof(ringtone_notes), ringtone_notes, 126);
 static Animation ringtone_leds(LEDS_R, 2);
+static BufferedAnimation *animptr = NULL;
 
 Trigger bell_trigger(BELL, LOW, 20000, "bell");
 Trigger passage_trigger(PASSAGE, HIGH, 1000, "passage", 20);
@@ -110,10 +111,19 @@ static void update_ledstrips(){
 	}
 }
 
+static inline BufferedAnimation *get_anim_ptr(char identifier){
+	switch (identifier){
+		case 'R': return &ledstrip_r;
+		case 'B': return &ledstrip_b;
+		default: return NULL;
+	}
+}
+
 /* ==== Serial communication ==== */
 static void read_serial(){
 	if (Serial.available()){
-		switch (Serial.read()){
+		command = Serial.read();
+		switch (command){
 			case '?':
 				Serial.println("?"FIRMWARE_VERSION);
 				break;
@@ -138,44 +148,41 @@ static void read_serial(){
 				break;
 			case '#':
 				waitSerial();
-				c = Serial.read();
-				if (c != 0){
-					ledstrip_r.set_delay(c);
-					ledstrip_b.set_delay(c);
+				subcommand = Serial.read();
+				animptr = get_anim_ptr(subcommand);
+				if (animptr){
+					waitSerial();
+					c = Serial.read();
+					if (c != 0){
+						animptr->set_delay(c);
+					}
+					Serial.print("#"+subcommand);
+					Serial.println(ledstrip_r.delay(), DEC);
 				}
-				Serial.print("#");
-				Serial.println(ledstrip_r.delay(), DEC);
 				break;
 			case '%':
-				ledstrip_r.resetDefault();
-				ledstrip_b.resetDefault();
-				break;
-			case 'R':
 				waitSerial();
-				if (Serial.available()){
-					ledstrip_r.setLength(Serial.read());
-					for (i=0; i<ledstrip_r.length(); i++){
-						waitSerial();
-						ledstrip_r[i] = Serial.read();
-					}
-					Serial.print("R");
-					Serial.println(i);
-				} else {
-					Serial.println("!R");
+				subcommand = Serial.read();
+				animptr = get_anim_ptr(subcommand);
+				if (animptr){
+					animptr->resetDefault();
+					Serial.println("%"+subcommand);
 				}
 				break;
-			case 'B':
+			case 'U':
 				waitSerial();
-				if (Serial.available()){
-					ledstrip_b.setLength(Serial.read());
-					for (i=0; i<ledstrip_b.length(); i++){
+				subcommand = Serial.read();
+				animptr = get_anim_ptr(subcommand);
+				if (animptr){
+					waitSerial();
+					c = Serial.read();
+					animptr->setLength(c);
+					for (i=0; i<animptr->length(); i++){
 						waitSerial();
-						ledstrip_b[i] = Serial.read();
+						(*animptr)[i] = Serial.read();
 					}
-					Serial.print("B");
+					Serial.print("U"+subcommand);
 					Serial.println(i);
-				} else {
-					Serial.println("!B");
 				}
 				break;
 		}

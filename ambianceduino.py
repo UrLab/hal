@@ -50,8 +50,9 @@ class AmbianceduinoFinder(object):
 class AmbianceduinoReader(AmbianceduinoFinder):
     def eval_line(self, line):
         if line[0] == '#':
-            delay = int(line[1:])
-            self.when_delay(delay)
+            output = line[1]
+            delay = int(line[2:])
+            self.when_delay(output, delay)
         elif line[0] == 'T':
             active = bool(int(line[-1]))
             name = line[1:-1]
@@ -95,9 +96,11 @@ class AmbianceduinoReader(AmbianceduinoFinder):
                 self.when_bell()
             elif name == 'radiator':
                 self.when_radiator()
+            else:
+                self.default_handler("Trigger %s %s"%(name, "rise" if active else "fall"))
 
-    def when_delay(self, delay):
-        self.default_handler("Delay:", delay)
+    def when_delay(self, output, delay):
+        self.default_handler("Delay for output", output, ":", delay)
 
     def when_analogs(self, analogs):
         self.default_handler("Analogs:", analogs)
@@ -124,11 +127,14 @@ class AmbianceduinoReader(AmbianceduinoFinder):
         self.default_handler("The radiator is on !");
 
 class AmbianceduinoWriter(AmbianceduinoFinder):
+    ANIM_OUTPUTS = ['R', 'B']
+
     def __request(self, req_bytes):
         self.serial.write(req_bytes)
 
-    def delay(self, delay=1):
-        query = '#'
+    def delay(self, output, delay=1):
+        assert output in self.ANIM_OUTPUTS
+        query = '#'+output
         if delay in range(1, 256):
             query += chr(delay)
         else:
@@ -138,15 +144,16 @@ class AmbianceduinoWriter(AmbianceduinoFinder):
     def analogs(self):
         self.__request('@')
 
-    def upload_anim(self, anim_name, curve):
-        assert anim_name == 'R' or anim_name == 'B'
+    def upload_anim(self, output, curve):
+        assert output in self.ANIM_OUTPUTS
         dots = []
         for dot in curve:
             if 0 <= dot < 256: dots.append(chr(dot))
-        self.__request(anim_name + chr(len(dots)) + ''.join(dots))
+        self.__request('U' + output + chr(len(dots)) + ''.join(dots))
     
-    def reset_anims(self):
-        self.__request('%')
+    def reset_anim(self, output):
+        assert output in self.ANIM_OUTPUTS
+        self.__request('%'+output)
     
     def on(self):
         self.__request('-')
