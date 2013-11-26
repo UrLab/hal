@@ -10,9 +10,6 @@ arduino/src/sketch.ino: arduino/src/sketch.ino.tpl .git
 
 upload: arduino/.build/uno/firmware.hex
 	cd arduino && ino upload
-	
-arduino/.build/uno/firmware.hex: arduino/src/sketch.ino
-	cd arduino && ino build
 
 clean:
 	rm -f arduino/src/sketch.ino
