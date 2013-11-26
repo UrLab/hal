@@ -172,6 +172,8 @@ class AmbianceDaemon(Ambianceduino):
         AUDIO_SAMPLE_RATE = 44100
         FRAMES_PER_SECOND = 14
         SAMPLES_TO_DROP = (AUDIO_SAMPLE_RATE/FRAMES_PER_SECOND)-SAMPLES_PER_FRAME
+
+        self.delay('B', int(1000/FRAMES_PER_SECOND))
         with open("/tmp/mpd.fifo", "rb") as sound:
             while True:
                 if not self.powered:
