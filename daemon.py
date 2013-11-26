@@ -207,4 +207,5 @@ if __name__ == "__main__":
         exit()
     except Exception as err:
         logger.error("%s: %s"%(err.__class__.__name__, err.message))
+        a.stop()
 
