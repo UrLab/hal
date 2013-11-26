@@ -27,6 +27,7 @@ class AmbianceduinoFinder(object):
             if got and got[0] == '?':
                 if got[1:] == FIRMWARE_VERSION:
                     done = True
+                    self.version = FIRMWARE_VERSION
                     break
                 else:
                     raise self.VersionMismatch("Expected %s; got %s"%(FIRMWARE_VERSION, got[1:]))

@@ -194,7 +194,7 @@ if __name__ == "__main__":
         logger.error("%s: %s"%(err.__class__.__name__, err))
         exit(1)
 
-    logger.info('Got Ambianceduino')
+    logger.info('Got Ambianceduino version '+a.version)
 
 
 
