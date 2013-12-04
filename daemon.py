@@ -8,7 +8,7 @@ from time import sleep
 from threading import Thread
 from logbook import Logger, FileHandler
 
-from config import AMQ_SERVER, METEO_QUEUE, METEO_LEN, EVENTS_QUEUE
+from config import *
 
 def getMsbFromAudio(audio_source):
     msb = ord(audio_source.read(1))
@@ -36,10 +36,16 @@ class AmbianceDaemon(Ambianceduino):
         self.meteo = []
         self.__init_puka_client()
         self.anims_uploaded = 0
+
+    def delay_red(self, milliseconds):
+        self.delay('R', milliseconds)
+
+    def delay_blue(self, milliseconds):
+        self.delay('B', milliseconds)
     
     def __spacestatus(self):
         try:
-            statuspage = urlopen('http://api.urlab.be/spaceapi/status')
+            statuspage = urlopen(STATUS_URL)
             payload = json.loads(statuspage.read())
             if 'state' in payload:
                 if payload['state'] == 'open' and self.powered != True:
@@ -56,7 +62,7 @@ class AmbianceDaemon(Ambianceduino):
             people = len(payload['color']) + len(payload['grey'])
             d = int(25/log(people+2))
             if d != self.current_delay:
-                self.delay(d)
+                self.delay_red(d)
         except Exception as err:
             self.logger.error("%s: %s"%(err.__class__.__name__, err.message))
     
@@ -119,9 +125,12 @@ class AmbianceDaemon(Ambianceduino):
         self.powered = False
         self.logger.info('Powered off')
 
-    def when_delay(self, delay):
-        self.current_delay = delay
-        self.logger.info('Delay set to %d'%(delay))
+    def when_delay(self, output, delay):
+        if output == 'R':
+            self.current_delay = delay
+            self.logger.info('Delay RED set to %d'%(delay))
+        elif output == 'B':
+            self.logger.info('Delay BLUE set to %d'%(delay))
 
     def when_bell(self):
         self.__send_message(EVENTS_QUEUE, {
@@ -163,8 +172,13 @@ class AmbianceDaemon(Ambianceduino):
         AUDIO_SAMPLE_RATE = 44100
         FRAMES_PER_SECOND = 14
         SAMPLES_TO_DROP = (AUDIO_SAMPLE_RATE/FRAMES_PER_SECOND)-SAMPLES_PER_FRAME
+
+        self.delay('B', int(1000/FRAMES_PER_SECOND))
         with open("/tmp/mpd.fifo", "rb") as sound:
             while True:
+                if not self.powered:
+                    sleep(1)
+                    continue
                 sound.read(SAMPLES_TO_DROP*2)
                 s = 0
                 for i in range(SAMPLES_PER_FRAME):
@@ -180,12 +194,12 @@ if __name__ == "__main__":
     logger.info('Starting')
     
     try:
-        a = AmbianceDaemon(boot_time=10)
+        a = AmbianceDaemon(boot_time=2)
     except Exception as err:
         logger.error("%s: %s"%(err.__class__.__name__, err))
         exit(1)
 
-    logger.info('Got Ambianceduino')
+    logger.info('Got Ambianceduino version '+a.version)
 
 
 
@@ -198,4 +212,5 @@ if __name__ == "__main__":
         exit()
     except Exception as err:
         logger.error("%s: %s"%(err.__class__.__name__, err.message))
+        a.stop()
 

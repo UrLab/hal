@@ -1,8 +1,8 @@
 #include "Trigger.h"
 #include "Arduino.h"
 
-Trigger::Trigger(int pin, int idleState, unsigned long int timeout, char onActivate, unsigned int activeAfter):
-_pin(pin), _idleState(idleState), _active(0), _onActivate(onActivate),
+Trigger::Trigger(int pin, int idleState, unsigned long int timeout, String name, unsigned int activeAfter):
+_pin(pin), _idleState(idleState), _active(0), _name(name),
 _active_from(0), _timeout(timeout), _activeAfter(activeAfter)
 {
 	pinMode(_pin, INPUT);
@@ -13,14 +13,14 @@ void Trigger::activate(void)
 	_active++;
 	if (_active == _activeAfter){
 		_active_from = millis();
-		if (_onActivate)
-			Serial.println(_onActivate);
+		Serial.println("T"+_name+"1");
 	}
 }
 
 void Trigger::deactivate(void)
 {
 	_active = 0;
+	Serial.println("T"+_name+"0");
 }
 
 bool Trigger::isIdleState(void)

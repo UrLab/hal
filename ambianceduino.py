@@ -27,6 +27,7 @@ class AmbianceduinoFinder(object):
             if got and got[0] == '?':
                 if got[1:] == FIRMWARE_VERSION:
                     done = True
+                    self.version = FIRMWARE_VERSION
                     break
                 else:
                     raise self.VersionMismatch("Expected %s; got %s"%(FIRMWARE_VERSION, got[1:]))
@@ -50,8 +51,13 @@ class AmbianceduinoFinder(object):
 class AmbianceduinoReader(AmbianceduinoFinder):
     def eval_line(self, line):
         if line[0] == '#':
-            delay = int(line[1:])
-            self.when_delay(delay)
+            output = line[1]
+            delay = int(line[2:])
+            self.when_delay(output, delay)
+        elif line[0] == 'T':
+            active = bool(int(line[-1]))
+            name = line[1:-1]
+            self.when_trigger(name, active)
         elif line[0] == '@':
             analogs = json.loads(line[1:])
             self.when_analogs(analogs)
@@ -64,12 +70,6 @@ class AmbianceduinoReader(AmbianceduinoFinder):
         elif line[0] in ['R', 'B']:
             anim_length = int(line[1:])
             self.when_anim(line[0], anim_length)
-        elif line[0] == '*':
-            self.when_bell()
-        elif line[0] == '$':
-            self.when_door()
-        elif line[0] == '&':
-            self.when_radiator()
 
     def read_loop(self):
         while self.running:
@@ -89,8 +89,19 @@ class AmbianceduinoReader(AmbianceduinoFinder):
     def default_handler(self, *args):
         print ' '.join(map(str, args))
 
-    def when_delay(self, delay):
-        self.default_handler("Delay:", delay)
+    def when_trigger(self, name, active):
+        if active:
+            if name == 'door':
+                self.when_door()
+            elif name == 'bell':
+                self.when_bell()
+            elif name == 'radiator':
+                self.when_radiator()
+            else:
+                self.default_handler("Trigger %s %s"%(name, "rise" if active else "fall"))
+
+    def when_delay(self, output, delay):
+        self.default_handler("Delay for output", output, ":", delay)
 
     def when_analogs(self, analogs):
         self.default_handler("Analogs:", analogs)
@@ -117,11 +128,14 @@ class AmbianceduinoReader(AmbianceduinoFinder):
         self.default_handler("The radiator is on !");
 
 class AmbianceduinoWriter(AmbianceduinoFinder):
+    ANIM_OUTPUTS = ['R', 'B']
+
     def __request(self, req_bytes):
         self.serial.write(req_bytes)
 
-    def delay(self, delay=1):
-        query = '#'
+    def delay(self, output, delay=1):
+        assert output in self.ANIM_OUTPUTS
+        query = '#'+output
         if delay in range(1, 256):
             query += chr(delay)
         else:
@@ -131,15 +145,16 @@ class AmbianceduinoWriter(AmbianceduinoFinder):
     def analogs(self):
         self.__request('@')
 
-    def upload_anim(self, anim_name, curve):
-        assert anim_name == 'R' or anim_name == 'B'
+    def upload_anim(self, output, curve):
+        assert output in self.ANIM_OUTPUTS
         dots = []
         for dot in curve:
             if 0 <= dot < 256: dots.append(chr(dot))
-        self.__request(anim_name + chr(len(dots)) + ''.join(dots))
+        self.__request('U' + output + chr(len(dots)) + ''.join(dots))
     
-    def reset_anims(self):
-        self.__request('%')
+    def reset_anim(self, output):
+        assert output in self.ANIM_OUTPUTS
+        self.__request('%'+output)
     
     def on(self):
         self.__request('-')
