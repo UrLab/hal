@@ -9,12 +9,11 @@ HAL (Heuristically programmed ALgorithmic computer) is a sentient computer (or a
 
 # Compile & upload Arduino code
 	
-	$ pushd arduino && ino build && ino upload; popd
+	$ make
 
 # Communication avec l'Ambianceduino
 	
-	$ python reader.py #read-only
-	$ python daemon.py #Communication
+	$ python daemon.py
 
 ## Interactive
 	
