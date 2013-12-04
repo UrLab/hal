@@ -1,4 +1,6 @@
 AMQ_SERVER = "amqp://user:pass@host/"
 EVENTS_QUEUE = "api.events.feed"
 METEO_QUEUE = "api.meteo.feed"
-METEO_LEN = 6
+METEO_LEN = 60
+
+STATUS_URL = "http://api.urlab.be/spaceapi/status"
