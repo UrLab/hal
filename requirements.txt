@@ -3,3 +3,4 @@ pyserial
 ipython
 puka
 numpy
+logbook
