@@ -1,24 +1,39 @@
-from serial import Serial
+from serial import Serial, SerialException
 from glob import glob
 from time import sleep
 from threading import Thread
 from math import sqrt
 import json
+import traceback
+import sys
+import subprocess
+import config
+import os.path
 
 from version import FIRMWARE_VERSION
+
+
+def suicide():
+    try:
+        if config.BAD_DRIVER and os.path.isfile("/sbin/arduinoreset"):
+            subprocess.call(["sudo", "/sbin/arduinoreset"])
+    except NameError:
+        pass
+    sys.exit(1)
+
 
 class AmbianceduinoFinder(object):
     class NotFound(Exception):
         pass
-    
+
     class VersionMismatch(Exception):
         pass
-    
-    DEV_PATTERNS = ["/dev/ttyACM*", "/dev/ttyUSB*", "/dev/tty.usbmodem*"]
+
+    DEV_PATTERNS = ["/dev/ttyACM*", "/dev/ttyUSB*", "/dev/tty.usbmodem*", "/dev/tty.usbserial*"]
 
     def __try_device(self, device, boot_time, tries=10):
         self.serial = Serial(device, 115200, timeout=1)
-        sleep(boot_time) #Wait arduino boot
+        sleep(boot_time) # Wait arduino boot
         self.serial.write('?')
         done = False
         for i in range(tries):
@@ -30,24 +45,28 @@ class AmbianceduinoFinder(object):
                     self.version = FIRMWARE_VERSION
                     break
                 else:
-                    raise self.VersionMismatch("Expected %s; got %s"%(FIRMWARE_VERSION, got[1:]))
+                    raise self.VersionMismatch("Expected %s; got %s" % (FIRMWARE_VERSION, got[1:]))
         if not done:
             self.serial.close()
             self.serial = None
 
-    def __init__(self, device_path=None, boot_time=5):
+    def __init__(self, logger, device_path=None, boot_time=5):
+        self.threads = []
+        self.logger = logger
         if device_path:
             self.__try_device(device_path, boot_time)
         else:
             possible_devices = [f for pattern in self.DEV_PATTERNS for f in glob(pattern)]
+            if len(possible_devices) == 0:
+                raise self.NotFound("No possibilities")
             for device in possible_devices:
                 self.__try_device(device, boot_time)
                 if self.serial:
                     break
         if not self.serial:
-            raise self.NotFound("Tried "+str(possible_devices+[device_path]))
+            raise self.NotFound("Tried " + str(possible_devices + [device_path]))
 
-    
+
 class AmbianceduinoReader(AmbianceduinoFinder):
     def eval_line(self, line):
         if line[0] == '#':
@@ -73,18 +92,29 @@ class AmbianceduinoReader(AmbianceduinoFinder):
 
     def read_loop(self):
         while self.running:
-            line = self.serial.readline().strip()
+            try:
+                line = self.serial.readline().strip()
+            except SerialException:
+                self.logger.error("SerialException while reading")
+                suicide()
+            except Exception as err:
+                self.logger.error("%s: %s" % (err.__class__.__name__, err.message))
+                print traceback.format_exc()
+                suicide()
+
             if len(line) > 0:
                 self.eval_line(line)
-            
+
     def run(self):
         self.running = True
-        self.reader = Thread(target=self.read_loop)
+        self.reader = Thread(target=self.read_loop, name="reader")
+        self.threads.append(self.reader)
         self.reader.start()
 
     def stop(self):
         self.running = False
-        self.reader.join()
+        for t in self.threads:
+            t.join()
 
     def default_handler(self, *args):
         print ' '.join(map(str, args))
@@ -98,7 +128,7 @@ class AmbianceduinoReader(AmbianceduinoFinder):
             elif name == 'radiator':
                 self.when_radiator()
             else:
-                self.default_handler("Trigger %s %s"%(name, "rise" if active else "fall"))
+                self.default_handler("Trigger %s %s" % (name, "rise" if active else "fall"))
 
     def when_delay(self, output, delay):
         self.default_handler("Delay for output", output, ":", delay)
@@ -123,19 +153,28 @@ class AmbianceduinoReader(AmbianceduinoFinder):
 
     def when_door(self):
         self.default_handler("The door is open !")
-    
+
     def when_radiator(self):
-        self.default_handler("The radiator is on !");
+        self.default_handler("The radiator is on !")
+
 
 class AmbianceduinoWriter(AmbianceduinoFinder):
     ANIM_OUTPUTS = ['R', 'B']
 
     def __request(self, req_bytes):
-        self.serial.write(req_bytes)
+        try:
+            self.serial.write(req_bytes)
+        except SerialException:
+            self.logger.error("SerialException while writing")
+            suicide()
+        except Exception as err:
+            self.logger.error("%s: %s" % (err.__class__.__name__, err.message))
+            print traceback.format_exc()
+            suicide()
 
     def delay(self, output, delay=1):
         assert output in self.ANIM_OUTPUTS
-        query = '#'+output
+        query = '#' + output
         if delay in range(1, 256):
             query += chr(delay)
         else:
@@ -149,13 +188,14 @@ class AmbianceduinoWriter(AmbianceduinoFinder):
         assert output in self.ANIM_OUTPUTS
         dots = []
         for dot in curve:
-            if 0 <= dot < 256: dots.append(chr(dot))
+            if 0 <= dot < 256:
+                dots.append(chr(dot))
         self.__request('U' + output + chr(len(dots)) + ''.join(dots))
-    
+
     def reset_anim(self, output):
         assert output in self.ANIM_OUTPUTS
-        self.__request('%'+output)
-    
+        self.__request('%' + output)
+
     def on(self):
         self.__request('-')
 

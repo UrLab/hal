@@ -2,5 +2,4 @@ ino
 pyserial
 ipython
 puka
-numpy
 logbook
