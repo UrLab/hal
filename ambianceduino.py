@@ -6,11 +6,19 @@ from math import sqrt
 import json
 import traceback
 import sys
+import subprocess
+import config
+import os.path
 
 from version import FIRMWARE_VERSION
 
 
 def suicide():
+    try:
+        if config.BAD_DRIVER and os.path.isfile("/sbin/arduinoreset"):
+            subprocess.call(["sudo", "/sbin/arduinoreset"])
+    except NameError:
+        pass
     sys.exit(1)
 
 
