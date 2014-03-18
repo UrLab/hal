@@ -11,6 +11,7 @@ class Trigger {
 		String _name;
 	public:
 		Trigger(int pin, int idleState, unsigned long int timeout, String name, unsigned int activeAfter=1);
+		void force_activate(void);
 		void activate(void);
 		void deactivate(void);
 		bool isActive(void);

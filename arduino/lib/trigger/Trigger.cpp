@@ -17,6 +17,12 @@ void Trigger::activate(void)
 	}
 }
 
+void Trigger::force_activate(void)
+{
+	_active = _activeAfter-1;
+	activate();
+}
+
 void Trigger::deactivate(void)
 {
 	_active = 0;
