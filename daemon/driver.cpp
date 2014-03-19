@@ -78,12 +78,28 @@ static int hal_read(const char *path, char *buf, size_t size, off_t offset,
     return l;
 }
 
+
+static int hal_write(const char *path, const char *buf, size_t size, off_t offset,
+        struct fuse_file_info *fi) {
+
+    if (streq(path, "/open")){
+    	if(buf[0] == '1')
+    		arduino->on();
+    	else
+    		arduino->off();
+    }
+    else
+        return -EACCES;
+
+    return size;
+}
+
 static struct fuse_operations hal_ops = {
     .getattr    = hal_getattr,
     // .readdir    = hal_readdir,
     .open       = hal_open,
     .read       = hal_read,
-    // .write      = hal_write,
+    .write      = hal_write,
     .truncate   = hal_trunc,
     .init	= hal_init
 };
