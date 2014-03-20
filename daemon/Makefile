@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -std=c99
-CXXFLAGS = -std=c++11 -Wno-unused-parameters
+CXXFLAGS = -std=c++11
 CPPFLAGS = -pedantic -Wall -Wextra
 
 daemon: daemon.o arduino-serial-lib.o Ambianceduino.o
