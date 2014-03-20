@@ -161,8 +161,10 @@ static void read_serial(){
                 break;
 
             case '_': 
-                door_trigger.force_activate();
-                state = POWERED; 
+                if (state > POWERED){
+                    door_trigger.force_activate();
+                    state = POWERED; 
+                }
                 Serial.println("_");
                 break;
             
