@@ -22,12 +22,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+arduino-serial-lib -- simple library for reading/writing serial ports
+2006-2013, Tod E. Kurt, http://todbot.com/blog/
 */
-//
-// arduino-serial-lib -- simple library for reading/writing serial ports
-//
-// 2006-2013, Tod E. Kurt, http://todbot.com/blog/
-//
+
 
 #include "arduino-serial-lib.h"
 
@@ -102,7 +101,7 @@ int serialport_init(const char* serialport, int baud)
     toptions.c_cflag &= ~CSIZE;
     toptions.c_cflag |= CS8;
     // no flow control
-    toptions.c_cflag &= ~CRTSCTS;
+    //toptions.c_cflag &= ~CRTSCTS;
 
     //toptions.c_cflag &= ~HUPCL; // disable hang-up-on-close to avoid reset
 
@@ -142,7 +141,7 @@ int serialport_writebyte( int fd, uint8_t b)
 }
 
 //
-int serialport_write(int fd, const char* str)
+int serialport_write(int fd, const unsigned char* str)
 {
     int len = strlen(str);
     int n = write(fd, str, len);

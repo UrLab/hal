@@ -143,11 +143,13 @@ Func mainloops[] = {
     loop_STANDBY, loop_POWERED, loop_SHOWTIME, loop_ALERT
 };
 
+#define waitSerial() while (! Serial.available())
+
 /* ==== Serial communication ==== */
 static void read_serial(){
     if (Serial.available()){
         char command = Serial.read();
-        char index, n;
+        unsigned char index, n;
         switch (command){
             case '?':
                 Serial.println("?{{version}}");
@@ -164,24 +166,33 @@ static void read_serial(){
                 Serial.println("_");
                 break;
             
+            /*! Syntax: @<i> where 0<=i<=5 is the analog input number
+                Reply: @<name>:<n> where 0<=n<=1023 is the value.
+                       ! if error.
+             */
             case '@':
-                Serial.print("@{");
-                for (char i=0; i<6; i++){
-                    if (i>0) Serial.print(",");
-                    Serial.print("\"");
-                    Serial.print(analog_map[i]);
-                    Serial.print("\":");
-                    Serial.print(analogRead(i), DEC);
+                waitSerial();
+                index = Serial.read();
+                if (index > 5) {
+                    Serial.print("!Index too large: ");
+                    Serial.println(index, DEC);
                 }
-                Serial.println("}");
+                else {
+                    Serial.print("@");
+                    Serial.print(analog_map[index]);
+                    Serial.print(":");
+                    Serial.println(analogRead(index));
+                }
                 break;
             
             /*! Syntax: #<i><fps>, where i is the index of the anim, and fps 
-                        the desired FPS. Both as unsigned bytes */
+                        the desired FPS. Both as unsigned bytes
+                Reply: # if ok, ! if error
+             */
             case '#':
-                while (! Serial.available());
+                waitSerial();
                 index = Serial.read();
-                while (! Serial.available());
+                waitSerial();
                 n = Serial.read();
 
                 if (index < N_LEDSTRIPS){
@@ -194,7 +205,6 @@ static void read_serial(){
             
             /*! Syntax: %<i>where i is the index of the anim as unsigned byte */
             case '%':
-                /* Reset anim to default */
                 Serial.println("%");
                 break;
             
@@ -202,9 +212,9 @@ static void read_serial(){
                         length of the animations (<=255), and the rest are the
                         bytes of the animation. All as unsigned bytes. */
             case 'U':
-                while (! Serial.available());
+                waitSerial();
                 index = Serial.read();
-                while (! Serial.available());
+                waitSerial();
                 n = Serial.read();
 
                 if (index < N_LEDSTRIPS){
@@ -215,7 +225,7 @@ static void read_serial(){
                 }
 
                 for (int i=0; i<n; i++){
-                    while (! Serial.available());
+                    waitSerial();
                     unsigned char val = Serial.read();
                     if (index < N_LEDSTRIPS)
                         (*(ledstrips[index]))[i] = val;
@@ -231,13 +241,14 @@ void setup()
 {
     Serial.begin(BAUDS);
 
-    state = STANDBY;
-
     /* Setting default sinusoid for all ledstrips */
     ledstrip_r.resetDefault();
     ledstrip_ringtone.resetDefault();
     for (Unit i=0; i<ledstrip_g.len(); i++)
         ledstrip_g[i] = door_flash[i];
+
+    state = STANDBY;
+    setup_STANDBY();
 }
 
 void loop()
@@ -245,10 +256,12 @@ void loop()
     State old_state = state;
     read_serial();
 
+    /* Run current state mainloop, unless state change requested via serial */
     if (state == old_state && state <= STATE_MAX){
         mainloops[state]();
     }
 
+    /* Run transition to new state if state changed */
     if (state != old_state && state <= STATE_MAX){
         transitions[state]();
     }

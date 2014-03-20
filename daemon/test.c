@@ -1,98 +1,53 @@
 #include <stdio.h>
-#include "arduino-serial-lib.h"
-#include <stdbool.h>
-#include <errno.h>
-#include <string.h>
+#include <unistd.h>
+#include "Ambianceduino.h"
 
-bool alive = false;
+HAL arduino;
 
-#define strip(s) rstrip(lstrip(s, "\t\r\n"), "\t\r\n")
-
-char *lstrip(char *str, const char *junk)
+#define CASEPRINT(n) case n: printf(#n); break
+void printState(HALState s)
 {
-    while (*str != '\0' && strchr(junk, *str))
-        str++;
-    return str;
-}
-
-char *rstrip(char *str, const char *junk)
-{
-    size_t i = strlen(str);
-    while (i > 0 && strchr(junk, str[i-1])){
-        i--;
-        str[i] = '\0';
+    printf("STATE: ");
+    switch (s){
+        CASEPRINT(STANDBY);
+        CASEPRINT(POWERED);
+        CASEPRINT(SHOWTIME);
+        CASEPRINT(ALERT);
     }
-    return str;
-}
-
-void parseCommand(char *cmd)
-{
-    bool active;
-    size_t len = strlen(cmd);
-    if (len == 0)
-        return;
-
-    alive = 1;
-
-    printf("PARSE \"%s\"\n", cmd);
-
-    switch (cmd[0]){
-        case '-': puts("ON");  break;
-        case '_': puts("OFF"); break;
-        case '?':
-            printf("\033[1mArduino version\033[0m: %s\n", cmd+1);
-            break;
-        case '@':
-            printf("Got analogs: %s\n", cmd+1);
-            break;
-        case '#':
-            printf("FPS correctly set\n");
-            break;
-        case 'T':
-            active = (bool) (cmd[len-1]-'0');
-            cmd[len-1] = '\0';
-            printf("Trigger %s become %sactive\n", cmd+1, active ? "" : "in");
-            break;
-        case 'S':
-            printf("Switched to state %s\n", cmd+1);
-            break;
-        case '!':
-            printf("Arduino ");
-        default:
-            printf("error !!!\n");
-    }
-}
-
-void readCommand(int fd)
-{
-    char buf[256];
-    if (serialport_read_until(fd, buf, '\n', sizeof(buf), 1500))
-            parseCommand(strip(buf));
+    puts("");
 }
 
 int main(int argc, const char **argv)
 {
-    if (argc == 1){
-        fprintf(stderr, "Usage: %s <arduino serial port>\n", argv[0]);
-        return 1;
+    HALState state;
+    HAL_init(&arduino, "/dev/ttyACM0", 115200);
+    printf("Got arduino\n");
+
+    HAL_start(&arduino);
+
+    HAL_READ(&arduino, state, state);
+    printState(state);
+
+    HAL_on(&arduino);
+
+    for (unsigned char i=0; i<6; i++){
+        HAL_askAnalog(&arduino, i);
+        printf("Asked analog%d\n", i);
     }
 
-    printf("Opening %s...\n", argv[1]);
-    int fd = serialport_init(argv[1], 115200);
-
-    if (fd < 0){
-        fprintf(stderr, "Unable to open %s: %s\n", argv[1], strerror(errno));
-        return 1;
+    if (HAL_lock(&arduino)){
+        printState(arduino.state);
+        printf("\033[1m      LIGHT\033[0m  Inside: %4d /  Outside: %4d\n", arduino.light_inside, arduino.light_outside);
+        printf("\033[1mTEMPERATURE\033[0m Ambiant: %4d / Radiator: %4d\n", arduino.temp_ambiant, arduino.temp_radiator);
+        HAL_unlock(&arduino);
     }
 
-    printf("Starting 1\n");
+    HAL_off(&arduino);
+    if (HAL_lock(&arduino)){
+        printState(arduino.state);
+        HAL_unlock(&arduino);
+    }
+    HAL_stop(&arduino);
 
-    while (! alive)
-        readCommand(fd);
-
-    serialport_write(fd, "-");
-    while (alive)
-        readCommand(fd);
+    return 0;
 }
-
-
