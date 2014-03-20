@@ -1,22 +1,18 @@
 CC = gcc
-CFLAGS = -std=c99 -Wno-unused-parameter
-CXXFLAGS = -std=c++11 -Wno-unused-parameter
-CPPFLAGS = -pedantic -Wall -Wextra
+CFLAGS = -std=c99 -pedantic -Wno-unused-parameter -Wall -Wextra
+LDFLAGS = -lpthread
 
-daemon: daemon.o arduino-serial-lib.o Ambianceduino.o
-	${CXX} -o $@ $^
+test: test.o arduino-serial-lib.o Ambianceduino.o
+	${CC} ${LDFLAGS} -o $@ $^
 
 driver: driver.o arduino-serial-lib.o Ambianceduino.o
-	${CC} -lpthread `pkg-config --libs fuse` -o $@ $^
+	${CC} ${LDFLAGS} `pkg-config --libs fuse` -o $@ $^
 
 driver.o: driver.c
 	${CC} ${CFLAGS} ${CPPFLAGS} `pkg-config --cflags fuse` -c -o $@ $<
 
 %.o: %.c
 	${CC} ${CFLAGS} ${CPPFLAGS} -c -o $@ $<
-
-%.o: %.cpp
-	${CXX} ${CXXFLAGS} ${CPPFLAGS} -c -o $@ $<
 
 .PHONY: clean
 clean:
