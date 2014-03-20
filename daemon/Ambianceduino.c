@@ -54,6 +54,12 @@ void HAL_askAnalog(HAL *hal, unsigned char sensor_id)
     }
 }
 
+void HAL_askVersion(HAL *hal)
+{
+    serialport_writebyte(hal->__fd, '?');
+    sleep(1);
+}
+
 void HAL_on(HAL *hal)
 {
     serialport_writebyte(hal->__fd, '-');

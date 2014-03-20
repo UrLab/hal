@@ -16,6 +16,8 @@
 
 HAL arduino;
 
+const char *STATE_NAMES[] = {"STANDBY", "POWERED", "SHOWTIME", "ALERT"};
+
 typedef struct halfs_file {
    char * name;
    int mode;
@@ -45,6 +47,7 @@ int version_size(const char *path){
     return 40;
 }
 
+/* cat /version */
 int version_read(const char * file, char * buffer, size_t size, off_t offset)
 {
     char res[41] = {'\0'};
@@ -59,6 +62,29 @@ int version_read(const char * file, char * buffer, size_t size, off_t offset)
     return l;
 }
 
+int state_size(const char *path){
+    HALState state;
+    HAL_READ(&arduino, state, state);
+    if (state <= ALERT)
+        return strlen(STATE_NAMES[state]);
+    return 0;
+}
+
+/* cat /state */
+int state_read(const char *file, char *buffer, size_t size, off_t offset)
+{
+    HALState state;
+    HAL_READ(&arduino, state, state);
+
+    if (state <= ALERT){
+        int l = min(strlen(STATE_NAMES[state]), size);
+        memcpy(buffer, STATE_NAMES[state], l);
+        return l;
+    }
+    return 0;
+}
+
+/*! echo > /open */
 int open_write(const char * file, const char * buffer, size_t size, off_t offset)
 {
     if (buffer[0] == '1')
@@ -74,6 +100,12 @@ halfs_file all_paths[] = {
         .mode = 0444,
         .read_callback = version_read,
         .size_callback = version_size
+    },
+    {
+        .name = "/state",
+        .mode = 0444,
+        .read_callback = state_read,
+        .size_callback = state_size
     },
     {
         .name = "/open",
@@ -115,6 +147,7 @@ static int halfs_getattr(const char *path, struct stat *stbuf)
 void * halfs_init(struct fuse_conn_info *conn){
     HAL_init(&arduino, "/dev/ttyACM0", 115200);
     HAL_start(&arduino);
+    HAL_askVersion(&arduino);
     return NULL;
 }
 
