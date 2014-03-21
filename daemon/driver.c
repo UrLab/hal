@@ -17,7 +17,7 @@
 #define min(a, b) ((a) < (b)) ? (a) : (b)
 
 HAL arduino;
-Node *halfs_root = NULL;
+DirTree *halfs_root = NULL;
 
 const char *STATE_NAMES[] = {"STANDBY", "POWERED", "SHOWTIME", "ALERT"};
 
@@ -153,6 +153,42 @@ int trigger_read(const char *file, char *buffer, size_t size, off_t offset)
     return 1;
 }
 
+int anim_curve_write(const char *file, const char *buffer, size_t size, off_t offset)
+{
+    DirTree *parentdir = DirTree_findParent(halfs_root, file);
+    if (parentdir){
+        unsigned char len = min(size, 0xff);
+        if (streq(parentdir->name, "R")){
+            HAL_upload(&arduino, 0, len, (unsigned char*) buffer+offset);
+            return len;
+        }
+        else if (streq(parentdir->name, "B")){
+            HAL_upload(&arduino, 1, len, (unsigned char*) buffer+offset);
+            return len;
+        }
+    }
+    return -ENOENT;
+}
+
+int anim_fps_write(const char *file, const char *buffer, size_t size, off_t offset)
+{
+    DirTree *parentdir = DirTree_findParent(halfs_root, file);
+    if (parentdir){
+        char *endptr;
+        int fps = strtol(buffer, &endptr, 10);
+        if (endptr > buffer && fps > 0){
+            if (fps > 0xff)
+                fps = 0xff;
+            if (streq(parentdir->name, "R"))
+                HAL_setFPS(&arduino, 0, fps);
+            else if (streq(parentdir->name, "G"))
+                HAL_setFPS(&arduino, 1, fps);
+            return size;
+        }
+    }
+    return -ENOENT;
+}
+
 /*! echo > /open */
 int open_write(const char * file, const char * buffer, size_t size, off_t offset)
 {
@@ -164,6 +200,7 @@ int open_write(const char * file, const char * buffer, size_t size, off_t offset
 }
 
 halfs_file all_paths[] = {
+    /* Arduino state */
     {
         .name = "/version",
         .mode = 0444,
@@ -176,6 +213,8 @@ halfs_file all_paths[] = {
         .read_callback = state_read,
         .size_callback = state_size
     },
+
+    /* Analog sensors: [0, 1023] */
     {
         .name = "/sensors/light_inside",
         .mode = 0444,
@@ -200,6 +239,8 @@ halfs_file all_paths[] = {
         .read_callback = sensor_read,
         .size_callback = sensor_size
     },
+
+    /* Digital sensors: {0, 1} */
     {
         .name = "/triggers/door",
         .mode = 0444,
@@ -230,6 +271,14 @@ halfs_file all_paths[] = {
         .read_callback = trigger_read,
         .size_callback = trigger_size
     },
+
+    /* Ledstrips */
+    {.name = "/leds/R/curve", .mode = 0222, .write_callback = anim_curve_write},
+    {.name = "/leds/R/fps", .mode = 0222, .write_callback = anim_fps_write},
+    {.name = "/leds/B/curve", .mode = 0222, .write_callback = anim_curve_write},
+    {.name = "/leds/B/fps", .mode = 0222, .write_callback = anim_fps_write},
+
+    /* open/close hackerspace */
     {
         .name = "/open",
         .mode = 0222,
@@ -247,24 +296,23 @@ static int halfs_getattr(const char *path, struct stat *stbuf)
 {
     memset(stbuf, 0, sizeof(struct stat));
 
-    Node *file = Node_find(halfs_root, path);
+    DirTree *file = DirTree_find(halfs_root, path);
     if (! file)
         return -ENOENT;
 
+    stbuf->st_uid = getuid();
+    stbuf->st_gid = getgid();
+
     if (file->first_child){
-        /* Directory */
+        /* has child => Directory */
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
-        stbuf->st_uid = getuid();
-        stbuf->st_gid = getgid();
     } else {
         halfs_file *fileopts = (halfs_file *) file->payload;
 
         stbuf->st_mode = S_IFREG | fileopts->mode;
         stbuf->st_nlink = 1;
         stbuf->st_size = fileopts->size_callback(path);
-        stbuf->st_uid = getuid();
-        stbuf->st_gid = getgid();
     }
 
     return 0;
@@ -276,9 +324,9 @@ void * halfs_init(struct fuse_conn_info *conn)
     HAL_start(&arduino);
     HAL_askVersion(&arduino);
 
-    halfs_root = Node_create("ROOT"); /* This name won't be used */
+    halfs_root = DirTree_create("ROOT"); /* This name won't be used */
     for (size_t i=0; i<N_PATHS; i++){
-        Node *file = Node_insert(halfs_root, all_paths[i].name);
+        DirTree *file = DirTree_insert(halfs_root, all_paths[i].name);
         file->payload = (void*) &(all_paths[i]);
     }
 
@@ -321,14 +369,14 @@ static int halfs_write(const char *path, const char *buf, size_t size, off_t off
 static int halfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         off_t offset, struct fuse_file_info *fi) {
 
-    Node *dir = Node_find(halfs_root, path);
+    DirTree *dir = DirTree_find(halfs_root, path);
     if (! dir)
         return -ENOENT;
 
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
 
-    for (Node *it=dir->first_child; it!=NULL; it=it->next_sibling)
+    for (DirTree *it=dir->first_child; it!=NULL; it=it->next_sibling)
         filler(buf, it->name, NULL, 0);
 
     return 0;

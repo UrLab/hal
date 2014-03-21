@@ -2,20 +2,21 @@
 #define DEFINE_DIRTREE_HEADER
 
 #include <stdbool.h>
-typedef struct Node_t Node;
+typedef struct DirTree_t DirTree;
 
-struct Node_t {
+struct DirTree_t {
 	const char *name;
-	Node *first_child, *next_sibling;
+	DirTree *first_child, *next_sibling;
 	void *payload;
 };
 
-Node *Node_create(const char *name);
-void Node_destroy(Node *self);
+DirTree *DirTree_create(const char *name);
+void DirTree_destroy(DirTree *self);
 
-void Node_addChild(Node *self, Node *child);
+void DirTree_addChild(DirTree *self, DirTree *child);
 
-Node *Node_find(Node *root, const char *full_path);
-Node *Node_insert(Node *root, const char *full_path);
+DirTree *DirTree_find(DirTree *root, const char *full_path);
+DirTree *DirTree_findParent(DirTree *root, const char *full_path);
+DirTree *DirTree_insert(DirTree *root, const char *full_path);
 
 #endif

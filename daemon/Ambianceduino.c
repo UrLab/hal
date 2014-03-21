@@ -47,29 +47,61 @@ void HAL_destroy(HAL *hal)
 
 void HAL_askAnalog(HAL *hal, unsigned char sensor_id)
 {
-    if (sensor_id < 6){
+    if (sensor_id < 6 && HAL_lock(hal)){
         serialport_writebyte(hal->__fd, '@');
         serialport_writebyte(hal->__fd, sensor_id);
+        HAL_unlock(hal);
         sleep(1);
     }
 }
 
 void HAL_askVersion(HAL *hal)
 {
-    serialport_writebyte(hal->__fd, '?');
+    if (HAL_lock(hal)){
+        serialport_writebyte(hal->__fd, '?');
+        HAL_unlock(hal);
+    }
     sleep(1);
 }
 
 void HAL_on(HAL *hal)
 {
-    serialport_writebyte(hal->__fd, '-');
+    if (HAL_lock(hal)){
+        serialport_writebyte(hal->__fd, '-');
+        HAL_unlock(hal);
+    }
     sleep(1);
 }
 
 void HAL_off(HAL *hal)
 {
-    serialport_writebyte(hal->__fd, '_');
+    if (HAL_lock(hal)){
+        serialport_writebyte(hal->__fd, '_');
+        HAL_unlock(hal);
+    }
     sleep(1);
+}
+
+void HAL_upload(HAL *hal, unsigned char anim_id, unsigned char len, unsigned char *curve)
+{
+    if (len > 0 && HAL_lock(hal)){
+        serialport_writebyte(hal->__fd, 'U');
+        serialport_writebyte(hal->__fd, anim_id);
+        serialport_writebyte(hal->__fd, len);
+        for (unsigned char i=0; i<len; i++)
+            serialport_writebyte(hal->__fd, curve[i]);
+        HAL_unlock(hal);
+    }
+}
+
+void HAL_setFPS(HAL *hal, unsigned char anim_id, unsigned char fps)
+{
+    if (fps > 0 && HAL_lock(hal)){
+        serialport_writebyte(hal->__fd, '#');
+        serialport_writebyte(hal->__fd, anim_id);
+        serialport_writebyte(hal->__fd, fps);
+        HAL_unlock(hal);
+    }
 }
 
 /* === Parsers === */
@@ -134,7 +166,7 @@ static bool HAL_parseTrigger(HAL *hal, char *command)
 
 static bool HAL_parse(HAL *hal, char *command)
 {
-    //printf("PARSE \"%s\"\n", command);
+    //printf("\033[1;35mPARSE \"%s\"\033[0m\n", command);
     bool power_on;
     switch (command[0]){
         case '-': 
