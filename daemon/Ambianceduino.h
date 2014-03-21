@@ -52,9 +52,9 @@ void HAL_on(HAL *hal);
 void HAL_off(HAL *hal);
 
 /*! Upload animation */
-void HAL_upload(HAL *hal, unsigned char anim_id, unsigned char len, unsigned char *curve);
-void HAL_setFPS(HAL *hal, unsigned char anim_id, unsigned char fps);
-
+void HAL_uploadAnim(HAL *hal, unsigned char anim_id, unsigned char len, unsigned char *curve);
+void HAL_setFPSAnim(HAL *hal, unsigned char anim_id, unsigned char fps);
+void HAL_resetAnim(HAL *hal, unsigned char anim_id);
 
 /* === Multithread-related procedures === */
 /*! Start reader thread in background */

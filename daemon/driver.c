@@ -159,11 +159,11 @@ int anim_curve_write(const char *file, const char *buffer, size_t size, off_t of
     if (parentdir){
         unsigned char len = min(size, 0xff);
         if (streq(parentdir->name, "R")){
-            HAL_upload(&arduino, 0, len, (unsigned char*) buffer+offset);
+            HAL_uploadAnim(&arduino, 0, len, (unsigned char*) buffer+offset);
             return len;
         }
         else if (streq(parentdir->name, "B")){
-            HAL_upload(&arduino, 1, len, (unsigned char*) buffer+offset);
+            HAL_uploadAnim(&arduino, 1, len, (unsigned char*) buffer+offset);
             return len;
         }
     }
@@ -179,10 +179,28 @@ int anim_fps_write(const char *file, const char *buffer, size_t size, off_t offs
         if (endptr > buffer && fps > 0){
             if (fps > 0xff)
                 fps = 0xff;
-            if (streq(parentdir->name, "R"))
-                HAL_setFPS(&arduino, 0, fps);
-            else if (streq(parentdir->name, "G"))
-                HAL_setFPS(&arduino, 1, fps);
+            if (streq(parentdir->name, "R")){
+                HAL_setFPSAnim(&arduino, 0, fps);
+                return size;
+            }
+            else if (streq(parentdir->name, "B")){
+                HAL_setFPSAnim(&arduino, 1, fps);
+                return size;
+            }
+        }
+    }
+    return -ENOENT;
+}
+
+int anim_reset_write(const char *file, const char *buffer, size_t size, off_t offset)
+{
+    DirTree *parentdir = DirTree_findParent(halfs_root, file);
+    if (parentdir){
+        if (streq(parentdir->name, "R")){
+            HAL_resetAnim(&arduino, 0);
+            return size;
+        } else if (streq(parentdir->name, "B")){
+            HAL_resetAnim(&arduino, 1);
             return size;
         }
     }
@@ -273,10 +291,12 @@ halfs_file all_paths[] = {
     },
 
     /* Ledstrips */
-    {.name = "/leds/R/curve", .mode = 0222, .write_callback = anim_curve_write},
-    {.name = "/leds/R/fps", .mode = 0222, .write_callback = anim_fps_write},
-    {.name = "/leds/B/curve", .mode = 0222, .write_callback = anim_curve_write},
-    {.name = "/leds/B/fps", .mode = 0222, .write_callback = anim_fps_write},
+    {.name="/leds/R/curve", .mode=0222, .write_callback=anim_curve_write},
+    {.name="/leds/R/fps"  , .mode=0222, .write_callback=anim_fps_write},
+    {.name="/leds/R/reset", .mode=0222, .write_callback=anim_reset_write},
+    {.name="/leds/B/curve", .mode=0222, .write_callback=anim_curve_write},
+    {.name="/leds/B/fps"  , .mode=0222, .write_callback=anim_fps_write},
+    {.name="/leds/B/reset", .mode=0222, .write_callback=anim_reset_write},
 
     /* open/close hackerspace */
     {

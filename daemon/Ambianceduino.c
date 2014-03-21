@@ -82,7 +82,7 @@ void HAL_off(HAL *hal)
     sleep(1);
 }
 
-void HAL_upload(HAL *hal, unsigned char anim_id, unsigned char len, unsigned char *curve)
+void HAL_uploadAnim(HAL *hal, unsigned char anim_id, unsigned char len, unsigned char *curve)
 {
     if (len > 0 && HAL_lock(hal)){
         serialport_writebyte(hal->__fd, 'U');
@@ -94,12 +94,21 @@ void HAL_upload(HAL *hal, unsigned char anim_id, unsigned char len, unsigned cha
     }
 }
 
-void HAL_setFPS(HAL *hal, unsigned char anim_id, unsigned char fps)
+void HAL_setFPSAnim(HAL *hal, unsigned char anim_id, unsigned char fps)
 {
     if (fps > 0 && HAL_lock(hal)){
         serialport_writebyte(hal->__fd, '#');
         serialport_writebyte(hal->__fd, anim_id);
         serialport_writebyte(hal->__fd, fps);
+        HAL_unlock(hal);
+    }
+}
+
+void HAL_resetAnim(HAL *hal, unsigned char anim_id)
+{
+    if (HAL_lock(hal)){
+        serialport_writebyte(hal->__fd, '%');
+        serialport_writebyte(hal->__fd, anim_id);
         HAL_unlock(hal);
     }
 }
