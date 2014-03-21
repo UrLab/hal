@@ -355,21 +355,19 @@ void * halfs_init(struct fuse_conn_info *conn)
 
 static int halfs_open(const char *path, struct fuse_file_info *fi)
 {
-    for (size_t i = 0; i < N_PATHS; i++){
-        if(streq(path, all_paths[i].name)){
-            return 0;
-        }
-    }
+    DirTree *file = DirTree_find(halfs_root, path);
+    if (file)
+        return 0;
     return -ENOENT;
 }
 
 static int halfs_read(const char *path, char *buf, size_t size, off_t offset,
               struct fuse_file_info *fi)
 {
-    for (size_t i = 0; i < N_PATHS; i++){
-        if(streq(path, all_paths[i].name)){
-            return all_paths[i].read_callback(path, buf, size, offset);
-        }
+    DirTree *file = DirTree_find(halfs_root, path);
+    if (file){
+        halfs_file *fileopts = file->payload;
+        return fileopts->read_callback(path, buf, size, offset);
     }
     return -ENOENT;
 }
@@ -378,10 +376,10 @@ static int halfs_read(const char *path, char *buf, size_t size, off_t offset,
 static int halfs_write(const char *path, const char *buf, size_t size, off_t offset,
         struct fuse_file_info *fi) {
 
-    for (size_t i = 0; i < N_PATHS; i++){
-        if(streq(path, all_paths[i].name)){
-            return all_paths[i].write_callback(path, buf, size, offset);
-        }
+    DirTree *file = DirTree_find(halfs_root, path);
+    if (file){
+        halfs_file *fileopts = file->payload;
+        return fileopts->write_callback(path, buf, size, offset);
     }
     return -ENOENT;
 }
