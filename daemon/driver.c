@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "utils.h"
+#include "dirtree.h"
 
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
@@ -15,6 +16,7 @@
 #define min(a, b) ((a) < (b)) ? (a) : (b)
 
 HAL arduino;
+Node *halfs_root = NULL;
 
 const char *STATE_NAMES[] = {"STANDBY", "POWERED", "SHOWTIME", "ALERT"};
 
@@ -84,6 +86,41 @@ int state_read(const char *file, char *buffer, size_t size, off_t offset)
     return 0;
 }
 
+int sensor_size(const char *path)
+{
+    return 4;
+}
+
+
+/* "temp_radia", "light_out", "temp_amb", "light_in", "temp_lm35", "Analog5" */
+
+/* cat /sensor/<name> */
+int sensor_read(const char *file, char *buffer, size_t size, off_t offset)
+{
+    const char *sensor = strrchr(file, '/')+1;
+    int val = 0;
+
+    if (streq(sensor, "light_inside")){
+        HAL_askAnalog(&arduino, 3);
+        HAL_READ(&arduino, light_inside, val);
+    }
+    else if (streq(sensor, "light_outside")){
+        HAL_askAnalog(&arduino, 1);
+        HAL_READ(&arduino, light_outside, val);
+    }
+    else if (streq(sensor, "temp_ambiant")){
+        HAL_askAnalog(&arduino, 2);
+        HAL_READ(&arduino, temp_ambiant, val);
+    }
+    else if (streq(sensor, "temp_radiator")){
+        HAL_askAnalog(&arduino, 0);
+        HAL_READ(&arduino, temp_radiator, val);
+    }
+    
+    snprintf(buffer, size, "%4d", val);
+    return min(size, 4);
+}
+
 /*! echo > /open */
 int open_write(const char * file, const char * buffer, size_t size, off_t offset)
 {
@@ -108,6 +145,30 @@ halfs_file all_paths[] = {
         .size_callback = state_size
     },
     {
+        .name = "/sensors/light_inside",
+        .mode = 0444,
+        .read_callback = sensor_read,
+        .size_callback = sensor_size
+    },
+    {
+        .name = "/sensors/light_outside",
+        .mode = 0444,
+        .read_callback = sensor_read,
+        .size_callback = sensor_size
+    },
+    {
+        .name = "/sensors/temp_ambiant",
+        .mode = 0444,
+        .read_callback = sensor_read,
+        .size_callback = sensor_size
+    },
+    {
+        .name = "/sensors/temp_radiator",
+        .mode = 0444,
+        .read_callback = sensor_read,
+        .size_callback = sensor_size
+    },
+    {
         .name = "/open",
         .mode = 0222,
         .write_callback = open_write
@@ -124,30 +185,46 @@ static int halfs_getattr(const char *path, struct stat *stbuf)
 {
     memset(stbuf, 0, sizeof(struct stat));
 
-    if (streq(path, "/")) {
+    printf("\033[1;33mGETATTR \"%s\"\033[0m\n", path);
+
+    Node *file = Node_find(halfs_root, path);
+    printf("FOUND: %p %s\n", file, file ? file->name : "");
+    if (! file)
+        return -ENOENT;
+
+    if (file->first_child){
+        /* Directory */
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
         stbuf->st_uid = getuid();
         stbuf->st_gid = getgid();
-        return 0;
+    } else {
+        halfs_file *fileopts = (halfs_file *) file->payload;
+
+        stbuf->st_mode = S_IFREG | fileopts->mode;
+        stbuf->st_nlink = 1;
+        stbuf->st_size = fileopts->size_callback(path);
+        stbuf->st_uid = getuid();
+        stbuf->st_gid = getgid();
     }
-    for (size_t i = 0; i < N_PATHS; i++){
-        if(streq(path, all_paths[i].name)){
-            stbuf->st_mode = S_IFREG | all_paths[i].mode;
-            stbuf->st_nlink = 1;
-            stbuf->st_size = all_paths[i].size_callback(path);
-            stbuf->st_uid = getuid();
-            stbuf->st_gid = getgid();
-            return 0;
-        }
-    }
-    return -ENOENT;
+
+    return 0;
 }
 
 void * halfs_init(struct fuse_conn_info *conn){
     HAL_init(&arduino, "/dev/ttyACM0", 115200);
     HAL_start(&arduino);
     HAL_askVersion(&arduino);
+
+    halfs_root = Node_create("ROOT"); /* This name won't be used */
+    for (size_t i=0; i<N_PATHS; i++){
+        Node *file = Node_insert(halfs_root, all_paths[i].name);
+        file->payload = (void*) &(all_paths[i]);
+    }
+
+    Node *root = Node_find(halfs_root, "/");
+    printf("\033[1;34mROOT: %p %s\033[0m\n", root, root ? root->name : "");
+
     return NULL;
 }
 
@@ -187,13 +264,16 @@ static int halfs_write(const char *path, const char *buf, size_t size, off_t off
 static int halfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         off_t offset, struct fuse_file_info *fi) {
 
-    if (strcmp(path, "/") != 0)
+    Node *dir = Node_find(halfs_root, path);
+    if (! dir)
         return -ENOENT;
 
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
-    for (size_t i=0; i<N_PATHS; i++){
-        filler(buf, all_paths[i].name + 1, NULL, 0);
+
+    for (Node *it=dir->first_child; it!=NULL; it=it->next_sibling){
+        printf("\033[1;31m(IN READDIR)%s\033[0m %p %p\n", it->name, it->first_child, it->next_sibling);
+        filler(buf, it->name, NULL, 0);
     }
 
     return 0;
