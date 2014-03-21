@@ -7,6 +7,7 @@
 #include "Ambianceduino.h"
 #include "utils.h"
 
+#define USECS_TO_WAIT 10000
 
 void __protected_HAL_write(HAL *hal, size_t offset, void *elem, size_t elem_size)
 {
@@ -51,7 +52,7 @@ void HAL_askAnalog(HAL *hal, unsigned char sensor_id)
         serialport_writebyte(hal->__fd, '@');
         serialport_writebyte(hal->__fd, sensor_id);
         HAL_unlock(hal);
-        sleep(1);
+        usleep(USECS_TO_WAIT);
     }
 }
 
@@ -61,7 +62,7 @@ void HAL_askVersion(HAL *hal)
         serialport_writebyte(hal->__fd, '?');
         HAL_unlock(hal);
     }
-    sleep(1);
+    usleep(USECS_TO_WAIT);
 }
 
 void HAL_on(HAL *hal)
@@ -70,7 +71,7 @@ void HAL_on(HAL *hal)
         serialport_writebyte(hal->__fd, '-');
         HAL_unlock(hal);
     }
-    sleep(1);
+    usleep(USECS_TO_WAIT);
 }
 
 void HAL_off(HAL *hal)
@@ -79,7 +80,7 @@ void HAL_off(HAL *hal)
         serialport_writebyte(hal->__fd, '_');
         HAL_unlock(hal);
     }
-    sleep(1);
+    usleep(USECS_TO_WAIT);
 }
 
 void HAL_uploadAnim(HAL *hal, unsigned char anim_id, unsigned char len, unsigned char *curve)
