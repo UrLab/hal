@@ -56,12 +56,12 @@ Trigger passage_trigger(PASSAGE_PIN, HIGH, 1000, "passage", 20);
 Trigger door_trigger(DOOR_PIN, HIGH, 60000, "door");
 Trigger radiator_trigger(RADIATOR_PIN, HIGH, 10000, "radiator", 20);
 
-DCLedstrip<255> ledstrip_r(LEDS_R_PIN, 40);
-DCLedstrip<sizeof(door_flash)/sizeof(Unit)> ledstrip_g(LEDS_G_PIN, 2*sizeof(door_flash));
-DCLedstrip<255> ledstrip_ringtone(LEDS_R_PIN, 500);
+Ledstrip ledstrip_r(LEDS_R_PIN);
+Ledstrip ledstrip_g(LEDS_G_PIN);
+Ledstrip ledstrip_ringtone(LEDS_R_PIN);
 
 #define N_LEDSTRIPS sizeof(ledstrips)/sizeof(void*)
-DCLedstrip<255> *ledstrips[] = {&ledstrip_r, &ledstrip_ringtone};
+Ledstrip *ledstrips[] = {&ledstrip_r, &ledstrip_ringtone};
 
 /* ==== Subroutines ==== */
 void setup_STANDBY()
@@ -114,12 +114,13 @@ void loop_POWERED()
 
 void loop_SHOWTIME()
 {
+    unsigned int now = millis();
     if (bell_trigger.isActive()){
         state = ALERT;
     } else {
-        ledstrip_r.play();
+        ledstrip_r.play(now);
         if (passage_trigger.isActive())
-            ledstrip_g.play();
+            ledstrip_g.play(now);
         else
             ledstrip_g.off();
     }
@@ -199,7 +200,8 @@ static void read_serial(){
 
                 if (index < N_LEDSTRIPS){
                     ledstrips[index]->setFPS(n);
-                    Serial.println("#");
+                    Serial.print("#");
+                    Serial.println(index, DEC);
                 } else {
                     Serial.println("!");
                 }
@@ -207,7 +209,15 @@ static void read_serial(){
             
             /*! Syntax: %<i>where i is the index of the anim as unsigned byte */
             case '%':
-                Serial.println("%");
+                waitSerial();
+                index = Serial.read();
+                if (index < N_LEDSTRIPS){
+                    ledstrips[index]->reset();
+                    Serial.print("%");
+                    Serial.println(index, DEC);
+                } else {
+                    Serial.println("!");
+                }
                 break;
             
             /*! Syntax: U<i><n><...> where i is the index of the anim, n the 
@@ -219,18 +229,16 @@ static void read_serial(){
                 waitSerial();
                 n = Serial.read();
 
-                if (index < N_LEDSTRIPS){
-                    ledstrips[index]->setLen(n);
-                    Serial.println("U");
-                } else {
+                if (index >= N_LEDSTRIPS){
                     Serial.println("!");
-                }
-
-                for (int i=0; i<n; i++){
-                    waitSerial();
-                    unsigned char val = Serial.read();
-                    if (index < N_LEDSTRIPS)
-                        (*(ledstrips[index]))[i] = val;
+                } else {
+                    ledstrips[index]->setLength(n);
+                    for (int i=0; i<n; i++){
+                        waitSerial();
+                        (*(ledstrips[index]))[i] = Serial.read();
+                    }
+                    Serial.print("U");
+                    Serial.println(index, DEC);
                 }
 
                 break;
@@ -243,10 +251,8 @@ void setup()
 {
     Serial.begin(BAUDS);
 
-    /* Setting default sinusoid for all ledstrips */
-    ledstrip_r.resetDefault();
-    ledstrip_ringtone.resetDefault();
-    for (Unit i=0; i<ledstrip_g.len(); i++)
+    ledstrip_g.setLength(sizeof(door_flash));
+    for (Unit i=0; i<sizeof(door_flash); i++)
         ledstrip_g[i] = door_flash[i];
 
     state = STANDBY;
