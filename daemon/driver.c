@@ -65,7 +65,8 @@ int version_read(const char * file, char * buffer, size_t size, off_t offset)
     return l;
 }
 
-int state_size(const char *path){
+int state_size(const char *path)
+{
     HALState state;
     HAL_READ(&arduino, state, state);
     if (state <= ALERT)
@@ -122,6 +123,36 @@ int sensor_read(const char *file, char *buffer, size_t size, off_t offset)
     return min(size, 4);
 }
 
+int trigger_size(const char *path)
+{
+    return 1;
+}
+
+int trigger_read(const char *file, char *buffer, size_t size, off_t offset)
+{
+    const char *trig = strrchr(file, '/')+1;
+    int val = 0;
+
+    if (streq(trig, "door")){
+        HAL_READ(&arduino, door, val);
+    }
+    else if (streq(trig, "bell")){
+        HAL_READ(&arduino, bell, val);
+    }
+    else if (streq(trig, "radiator")){
+        HAL_READ(&arduino, radiator, val);
+    }
+    else if (streq(trig, "passage")){
+        HAL_READ(&arduino, passage, val);
+    }
+    else if (streq(trig, "on")){
+        HAL_READ(&arduino, on, val);
+    }
+    
+    buffer[0] = val ? '1' : '0';        
+    return 1;
+}
+
 /*! echo > /open */
 int open_write(const char * file, const char * buffer, size_t size, off_t offset)
 {
@@ -168,6 +199,36 @@ halfs_file all_paths[] = {
         .mode = 0444,
         .read_callback = sensor_read,
         .size_callback = sensor_size
+    },
+    {
+        .name = "/triggers/door",
+        .mode = 0444,
+        .read_callback = trigger_read,
+        .size_callback = trigger_size
+    },
+    {
+        .name = "/triggers/bell",
+        .mode = 0444,
+        .read_callback = trigger_read,
+        .size_callback = trigger_size
+    },
+    {
+        .name = "/triggers/radiator",
+        .mode = 0444,
+        .read_callback = trigger_read,
+        .size_callback = trigger_size
+    },
+    {
+        .name = "/triggers/passage",
+        .mode = 0444,
+        .read_callback = trigger_read,
+        .size_callback = trigger_size
+    },
+    {
+        .name = "/triggers/on",
+        .mode = 0444,
+        .read_callback = trigger_read,
+        .size_callback = trigger_size
     },
     {
         .name = "/open",
