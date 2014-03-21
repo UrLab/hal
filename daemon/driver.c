@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/file.h>
+#include <stdio.h>
 
 #define __USE_BSD    /* For S_IFDIR */
 #include <sys/stat.h>
@@ -185,10 +186,7 @@ static int halfs_getattr(const char *path, struct stat *stbuf)
 {
     memset(stbuf, 0, sizeof(struct stat));
 
-    printf("\033[1;33mGETATTR \"%s\"\033[0m\n", path);
-
     Node *file = Node_find(halfs_root, path);
-    printf("FOUND: %p %s\n", file, file ? file->name : "");
     if (! file)
         return -ENOENT;
 
@@ -211,7 +209,8 @@ static int halfs_getattr(const char *path, struct stat *stbuf)
     return 0;
 }
 
-void * halfs_init(struct fuse_conn_info *conn){
+void * halfs_init(struct fuse_conn_info *conn)
+{
     HAL_init(&arduino, "/dev/ttyACM0", 115200);
     HAL_start(&arduino);
     HAL_askVersion(&arduino);
@@ -221,9 +220,6 @@ void * halfs_init(struct fuse_conn_info *conn){
         Node *file = Node_insert(halfs_root, all_paths[i].name);
         file->payload = (void*) &(all_paths[i]);
     }
-
-    Node *root = Node_find(halfs_root, "/");
-    printf("\033[1;34mROOT: %p %s\033[0m\n", root, root ? root->name : "");
 
     return NULL;
 }
@@ -271,10 +267,8 @@ static int halfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
 
-    for (Node *it=dir->first_child; it!=NULL; it=it->next_sibling){
-        printf("\033[1;31m(IN READDIR)%s\033[0m %p %p\n", it->name, it->first_child, it->next_sibling);
+    for (Node *it=dir->first_child; it!=NULL; it=it->next_sibling)
         filler(buf, it->name, NULL, 0);
-    }
 
     return 0;
 }
