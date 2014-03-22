@@ -56,12 +56,12 @@ int version_read(const char * file, char * buffer, size_t size, off_t offset)
     char res[41] = {'\0'};
     int l = 40;
 
-    if (offset != 0)
+    if (offset >= 40)
         return 0;
 
     HAL_READ(&arduino, version, res);
     l = min(((int)size), l);
-    memcpy(buffer, res, l);
+    memcpy(buffer, res + offset, l);
     return l;
 }
 
@@ -118,7 +118,7 @@ int sensor_read(const char *file, char *buffer, size_t size, off_t offset)
         HAL_askAnalog(&arduino, 0);
         HAL_READ(&arduino, temp_radiator, val);
     }
-    
+
     snprintf(buffer, size, "%4d", val);
     return min(size, 4);
 }
@@ -148,8 +148,8 @@ int trigger_read(const char *file, char *buffer, size_t size, off_t offset)
     else if (streq(trig, "on")){
         HAL_READ(&arduino, on, val);
     }
-    
-    buffer[0] = val ? '1' : '0';        
+
+    buffer[0] = val ? '1' : '0';
     return 1;
 }
 
