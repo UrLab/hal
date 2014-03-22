@@ -23,6 +23,7 @@ const char *STATE_NAMES[] = {"STANDBY", "POWERED", "SHOWTIME", "ALERT"};
 
 typedef struct halfs_file {
    char * name;
+   char * target;
    int mode;
    int (* size_callback)(const char *);
    int (* trunc_callback)(const char *);
@@ -231,6 +232,12 @@ halfs_file all_paths[] = {
         .read_callback = state_read,
         .size_callback = state_size
     },
+    /* Symlink test */
+    {
+        .name = "/demo-symlink",
+        .mode = 0444,
+        .target = "../driver.c"
+    },
 
     /* Analog sensors: [0, 1023] */
     {
@@ -329,10 +336,16 @@ static int halfs_getattr(const char *path, struct stat *stbuf)
         stbuf->st_nlink = 2;
     } else {
         halfs_file *fileopts = (halfs_file *) file->payload;
-
-        stbuf->st_mode = S_IFREG | fileopts->mode;
-        stbuf->st_nlink = 1;
-        stbuf->st_size = fileopts->size_callback(path);
+        if (fileopts->target == NULL){
+            stbuf->st_mode = S_IFREG | fileopts->mode;
+            stbuf->st_nlink = 1;
+            stbuf->st_size = fileopts->size_callback(path);
+        }
+        else{
+            stbuf->st_mode = S_IFLNK | fileopts->mode;
+            stbuf->st_nlink = 1;
+            stbuf->st_size = strlen(fileopts->target);
+        }
     }
 
     return 0;
@@ -340,7 +353,7 @@ static int halfs_getattr(const char *path, struct stat *stbuf)
 
 void * halfs_init(struct fuse_conn_info *conn)
 {
-    HAL_init(&arduino, "/dev/ttyACM0", 115200);
+    HAL_init(&arduino, "/dev/tty.usbmodemfa131", 115200);
     HAL_start(&arduino);
     HAL_askVersion(&arduino);
 
@@ -400,6 +413,18 @@ static int halfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     return 0;
 }
 
+static int halfs_readlink(const char *path, char *buf, size_t size){
+    DirTree *file = DirTree_find(halfs_root, path);
+    if (file){
+        halfs_file *fileopts = file->payload;
+        if(fileopts->target == NULL){
+            return -ENOENT;
+        }
+        strcpy(buf, fileopts->target);
+        return 0;
+    }
+}
+
 static struct fuse_operations hal_ops = {
     .getattr    = halfs_getattr,
     .readdir    = halfs_readdir,
@@ -407,7 +432,8 @@ static struct fuse_operations hal_ops = {
     .read       = halfs_read,
     .write      = halfs_write,
     .truncate   = halfs_trunc,
-    .init       = halfs_init
+    .init       = halfs_init,
+    .readlink   = halfs_readlink
 };
 
 int main(int argc, char *argv[])
