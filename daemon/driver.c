@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <sys/file.h>
 #include <stdio.h>
+#include <glob.h>
 
 #define __USE_BSD    /* For S_IFDIR */
 #include <sys/stat.h>
@@ -20,6 +21,8 @@ HAL arduino;
 DirTree *halfs_root = NULL;
 
 const char *STATE_NAMES[] = {"STANDBY", "POWERED", "SHOWTIME", "ALERT"};
+
+const char *ARDUINO_DEV_PATH[] = {"/dev/tty.usbmodem*", "/dev/ttyUSB*", "/dev/ttyACM*"};
 
 typedef struct halfs_file {
    char * name;
@@ -353,9 +356,27 @@ static int halfs_getattr(const char *path, struct stat *stbuf)
 
 void * halfs_init(struct fuse_conn_info *conn)
 {
-    HAL_init(&arduino, "/dev/tty.usbmodemfa131", 115200);
-    HAL_start(&arduino);
-    HAL_askVersion(&arduino);
+    glob_t globbuf;
+    globbuf.gl_offs = 0;
+
+    int flag = GLOB_DOOFFS;
+    for(int i = 0; i < sizeof(ARDUINO_DEV_PATH)/sizeof(char *); i++){
+        if (i == 1)
+            flag = flag | GLOB_APPEND;
+        glob(ARDUINO_DEV_PATH[i], flag, NULL, &globbuf);
+    }
+    printf("Found %i possible arduinos in /dev/\n", globbuf.gl_pathc);
+    for(int i = 0; i < globbuf.gl_pathc; i++){
+        printf("Trying %s\n", globbuf.gl_pathv[i]);
+        if(!HAL_init(&arduino, globbuf.gl_pathv[i], 115200))
+            continue;
+        HAL_start(&arduino);
+
+        // TODO: check version
+        HAL_askVersion(&arduino);
+
+    }
+    globfree(&globbuf);
 
     halfs_root = DirTree_create("ROOT"); /* This name won't be used */
     for (size_t i=0; i<N_PATHS; i++){
