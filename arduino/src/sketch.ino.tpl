@@ -21,6 +21,7 @@
 #define BUZZER 8
 #define DOOR 9
 #define LEDS_B 10
+#define kswitch 11
 #define PASSAGE 12
 #define RADIATOR 13
 
@@ -69,6 +70,7 @@ Trigger bell_trigger(BELL, LOW, 20000, "bell");
 Trigger passage_trigger(PASSAGE, HIGH, 1000, "passage", 20);
 Trigger door_trigger(DOOR, HIGH, 60000, "door");
 Trigger radiator_trigger(RADIATOR, LOW, 10000, "radiator", 20);
+Trigger kswitch_trigger(kswitch, LOW, 300, "kswitch", 20);
 
 static void door_bell_check(){
 	if (bell_trigger.isActive()){
@@ -80,6 +82,7 @@ static void door_bell_check(){
 		}
 	}
 	door_trigger.isActive();
+	kswitch_trigger.isActive();
 }
 
 
