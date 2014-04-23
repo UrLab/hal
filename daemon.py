@@ -72,7 +72,7 @@ class AmbianceDaemon(Ambianceduino):
 
     def __peoplecount(self):
         try:
-            pamelapage = urlopen('http://pamela.urlab.be/mac.json')
+            pamelapage = urlopen('https://pamela.urlab.be/mac.json')
             payload = json.loads(pamelapage.read())
             people = len(payload['color']) + len(payload['grey'])
             d = int(25 / log(people + 2))
