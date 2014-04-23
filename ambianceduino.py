@@ -120,6 +120,11 @@ class AmbianceduinoReader(AmbianceduinoFinder):
         print ' '.join(map(str, args))
 
     def when_trigger(self, name, active):
+        if name == 'kswitch':
+            if active:
+                self.when_hs_open()
+            else:
+                self.when_hs_close()
         if active:
             if name == 'door':
                 self.when_door()
@@ -156,6 +161,12 @@ class AmbianceduinoReader(AmbianceduinoFinder):
 
     def when_radiator(self):
         self.default_handler("The radiator is on !")
+
+    def when_hs_open(self):
+        self.default_handler("The hackerspace is open ! R4INB0WZ")
+
+    def when_hs_close(self):
+        self.default_handler("The hackerspace is closed ! G00DBYE")
 
 
 class AmbianceduinoWriter(AmbianceduinoFinder):

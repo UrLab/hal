@@ -23,7 +23,10 @@ from config import *
 
 
 def getMsbFromAudio(audio_source):
-    msb = ord(audio_source.read(1))
+    r = audio_source.read(1)
+    if not r:
+        return 0
+    msb = ord(r)
     audio_source.read(1)
     return (msb & 0x7f) - (msb & 0x80) # 2's complement
 
@@ -193,6 +196,13 @@ class AmbianceDaemon(Ambianceduino):
                 }
             })
             self.meteo = []
+
+    #http://api.urlab.be/spaceapi/statuschange?status=(open|close)
+    def when_hs_open(self):
+        urlopen('http://api.urlab.be/spaceapi/statuschange?status=open')
+
+    def when_hs_close(self):
+        urlopen('http://api.urlab.be/spaceapi/statuschange?status=close')
 
     def __mpd_loop(self):
         SAMPLES_PER_FRAME = 25
