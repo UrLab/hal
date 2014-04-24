@@ -200,9 +200,15 @@ class AmbianceDaemon(Ambianceduino):
     #http://api.urlab.be/spaceapi/statuschange?status=(open|close)
     def when_hs_open(self):
         urlopen('http://api.urlab.be/spaceapi/statuschange?status=open')
+        self.__send_message(EVENTS_QUEUE, {
+            'trigger': 'hs_open', 'time': str(datetime.now())
+        })
 
     def when_hs_close(self):
         urlopen('http://api.urlab.be/spaceapi/statuschange?status=close')
+        self.__send_message(EVENTS_QUEUE, {
+            'trigger': 'hs_close', 'time': str(datetime.now())
+        })
 
     def __mpd_loop(self):
         SAMPLES_PER_FRAME = 25
