@@ -70,7 +70,7 @@ Trigger bell_trigger(BELL, LOW, 20000, "bell");
 Trigger passage_trigger(PASSAGE, HIGH, 1000, "passage", 20);
 Trigger door_trigger(DOOR, HIGH, 60000, "door");
 Trigger radiator_trigger(RADIATOR, LOW, 10000, "radiator", 20);
-Trigger kswitch_trigger(kswitch, LOW, 300, "kswitch", 20);
+Trigger kswitch_trigger(kswitch, LOW, 60000, "kswitch", 100);
 
 static void door_bell_check(){
 	if (bell_trigger.isActive()){
