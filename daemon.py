@@ -205,18 +205,20 @@ class AmbianceDaemon(Ambianceduino):
             return
         try:
             urlopen('http://api.urlab.be/spaceapi/statuschange?status='+status)
+            self.__send_message(EVENTS_QUEUE, {
+                'trigger': 'hs_'+status, 'time': str(datetime.now())
+            })
         except:
-            pass
-        self.__send_message(EVENTS_QUEUE, {
-            'trigger': 'hs_'+status, 'time': str(datetime.now())
-        })
+            self.logger.error("Error when changing online space status")
 
     #http://api.urlab.be/spaceapi/statuschange?status=(open|close)
     def when_hs_open(self):
+        self.logger.info('Knife swith on')
         self.change_hs_status('open')
         self.on()
         
     def when_hs_close(self):
+        self.logger.info('Knife switch off')
         self.change_hs_status('close')
         self.off()
 
