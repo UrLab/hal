@@ -54,6 +54,7 @@ class AmbianceDaemon(Ambianceduino):
         self.meteo = []
         self.__init_puka_client()
         self.anims_uploaded = 0
+        self.hackerspace_status = None
 
     def delay_red(self, milliseconds):
         self.delay('R', milliseconds)
@@ -68,8 +69,10 @@ class AmbianceDaemon(Ambianceduino):
             if 'state' in payload:
                 if payload['state'] == 'open' and not self.powered:
                     self.on()
+                    self.hackerspace_status = 'open'
                 elif payload['state'] == 'closed' and self.powered:
                     self.off()
+                    self.hackerspace_status = 'close'
         except Exception as err:
             self.logger.error("%s: %s" % (err.__class__.__name__, err.message))
 
@@ -198,6 +201,8 @@ class AmbianceDaemon(Ambianceduino):
             self.meteo = []
 
     def change_hs_status(self, status):
+        if self.hackerspace_status and hackerspace_status == status:
+            return
         try:
             urlopen('http://api.urlab.be/spaceapi/statuschange?status='+status)
         except:
