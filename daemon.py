@@ -197,18 +197,21 @@ class AmbianceDaemon(Ambianceduino):
             })
             self.meteo = []
 
-    #http://api.urlab.be/spaceapi/statuschange?status=(open|close)
-    def when_hs_open(self):
-        urlopen('http://api.urlab.be/spaceapi/statuschange?status=open')
+    def change_hs_status(self, status):
+        try:
+            urlopen('http://api.urlab.be/spaceapi/statuschange?status='+status)
+        except:
+            pass
         self.__send_message(EVENTS_QUEUE, {
-            'trigger': 'hs_open', 'time': str(datetime.now())
+            'trigger': 'hs_'+status, 'time': str(datetime.now())
         })
 
+    #http://api.urlab.be/spaceapi/statuschange?status=(open|close)
+    def when_hs_open(self):
+        self.change_hs_status('open')
+        
     def when_hs_close(self):
-        urlopen('http://api.urlab.be/spaceapi/statuschange?status=close')
-        self.__send_message(EVENTS_QUEUE, {
-            'trigger': 'hs_close', 'time': str(datetime.now())
-        })
+        self.change_hs_status('close')
 
     def __mpd_loop(self):
         SAMPLES_PER_FRAME = 25
