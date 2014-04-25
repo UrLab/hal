@@ -201,7 +201,7 @@ class AmbianceDaemon(Ambianceduino):
             self.meteo = []
 
     def change_hs_status(self, status):
-        if self.hackerspace_status and hackerspace_status == status:
+        if self.hackerspace_status and self.hackerspace_status == status:
             return
         try:
             urlopen('http://api.urlab.be/spaceapi/statuschange?status='+status)
@@ -214,9 +214,11 @@ class AmbianceDaemon(Ambianceduino):
     #http://api.urlab.be/spaceapi/statuschange?status=(open|close)
     def when_hs_open(self):
         self.change_hs_status('open')
+        self.on()
         
     def when_hs_close(self):
         self.change_hs_status('close')
+        self.off()
 
     def __mpd_loop(self):
         SAMPLES_PER_FRAME = 25
