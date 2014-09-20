@@ -221,3 +221,17 @@ void HAL_ask_switch(struct HAL_t *hal, int switch_id)
     serialport_writebyte(hal->serial_fd, 42);
     printf("\033[31mS%d%d\033[0m\n", switch_id, 42);
 }
+
+void HAL_upload_anim(
+    struct HAL_t *hal, 
+    unsigned char anim_id, 
+    unsigned char len, 
+    const unsigned char *frames
+){
+    serialport_writebyte(hal->serial_fd, 'A');
+    serialport_writebyte(hal->serial_fd, anim_id);
+    serialport_writebyte(hal->serial_fd, len);
+    for (unsigned char i=0; i<len; i++)
+        serialport_writebyte(hal->serial_fd, frames[i]);
+    printf("\033[31mA%hhu:%hhu\033[0m\n", anim_id, len);
+}

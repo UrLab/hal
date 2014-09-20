@@ -13,5 +13,11 @@ void *HAL_read_thread(void *args);
 void HAL_ask_trigger(struct HAL_t *hal, int trig_id);
 void HAL_set_switch(struct HAL_t *hal, int switch_id, bool on);
 void HAL_ask_switch(struct HAL_t *hal, int switch_id);
+void HAL_upload_anim(
+    struct HAL_t *hal, 
+    unsigned char anim_id, 
+    unsigned char len, 
+    const unsigned char *frames
+);
 
 #endif

@@ -66,6 +66,14 @@ int switch_write(HALResource *sw, const char *buffer, size_t size, off_t offset)
     return size;
 }
 
+int animation_upload(HALResource *anim, const char *buffer, size_t size, off_t offset)
+{
+    pthread_mutex_lock(&anim->mutex);
+    HAL_upload_anim(&hal, anim->id, min(255, size), (const unsigned char*) buffer);
+    pthread_mutex_unlock(&anim->mutex);
+    return size;
+}
+
 /*
  * Build HALFS tree structure from detected I/O
  */
@@ -115,9 +123,11 @@ static void HALFS_build()
     for (size_t i=0; i<hal.n_animations; i++){
         strcpy(path, "/animations/");
         strcat(path, hal.animations[i].name);
+        strcat(path, "/frames");
         file = HALFS_insert(HALFS_root, path);
         file->backend = hal.animations + i;
         file->ops.mode = 0222;
+        file->ops.write = animation_upload;
     }
 }
 
