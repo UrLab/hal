@@ -38,6 +38,8 @@ extern "C" {
 	#include <stdint.h>   // Standard types 
 	#include <stdbool.h>
 
+    void minisleep(double secs);
+
 	int serialport_init(const char* serialport, int baud);
 	int serialport_close(int fd);
 	int serialport_writebyte( int fd, uint8_t b);

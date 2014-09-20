@@ -1,332 +1,203 @@
-#include "Ambianceduino.h"
 #include <unistd.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/file.h>
 #include <stdio.h>
 #include <glob.h>
-
-#define __USE_BSD    /* For S_IFDIR */
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "utils.h"
-#include "dirtree.h"
-
-#define FUSE_USE_VERSION 26
 #include <fuse.h>
+#include "HALFS.h"
+#include "com.h"
+#include "utils.h"
 
-#define min(a, b) ((a) < (b)) ? (a) : (b)
+/* Root of virtual file system */
+HALFS *HALFS_root = NULL;
 
-HAL arduino;
-DirTree *halfs_root = NULL;
+/* Main HAL structure */
+static struct HAL_t hal;
 
-const char *STATE_NAMES[] = {"STANDBY", "POWERED", "SHOWTIME", "ALERT"};
-
+/* Attempt to find arduino in these path */
 const char *ARDUINO_DEV_PATH[] = {"/dev/tty.usbmodem*", "/dev/ttyUSB*", "/dev/ttyACM*"};
 
-typedef struct halfs_file {
-   char * name;
-   char * target;
-   int mode;
-   int (* size_callback)(const char *);
-   int (* trunc_callback)(const char *);
-   int (* read_callback)(const char *, char *, size_t, off_t);
-   int (* write_callback)(const char *, const char *, size_t, off_t);
-} halfs_file;
-
-int default_size_callback(const char *path){
-    return 0;
-}
-
-int default_trunc_callback(const char *path){
-    return 0;
-}
-
-int default_read_callback(const char *path, char *buf, size_t size, off_t offset){
-    return 0;
-}
-
-int default_write_callback(const char *path, const char *buf, size_t size, off_t offset){
-    return 0;
-}
-
-int version_size(const char *path){
-    return 40;
-}
+int version_size(HALResource *backend){return 41;}
 
 /* cat /version */
-int version_read(const char * file, char * buffer, size_t size, off_t offset)
+int version_read(HALResource *backend, char * buffer, size_t size, off_t offset)
 {
-    char res[41] = {'\0'};
-    int l = 40;
-
-    if (offset >= 40)
+    if (offset > 40)
         return 0;
-
-    HAL_READ(&arduino, version, res);
-    l = min(((int)size), l);
-    memcpy(buffer, res + offset, l);
+    int l = min(size, (size_t) 41-offset);
+    memcpy(buffer, hal.version, l);
     return l;
 }
 
-int state_size(const char *path)
+/*
+ * Build HALFS tree structure from detected I/O
+ */
+static void HALFS_build()
 {
-    HALState state;
-    HAL_READ(&arduino, state, state);
-    if (state <= ALERT)
-        return strlen(STATE_NAMES[state]);
+    char path[128];
+    HALFS_root = HALFS_create("/");
+    HALFS * file = HALFS_insert(HALFS_root, "/version");
+    file->ops.read = version_read;
+    file->ops.size = version_size;
+    
+    for (size_t i=0; i<hal.n_triggers; i++){
+        strcpy(path, "/triggers/");
+        strcat(path, hal.triggers[i].name);
+        file = HALFS_insert(HALFS_root, path);
+        file->backend = hal.triggers + i;
+        file->ops.mode = 0444;
+    }
+
+    for (size_t i=0; i<hal.n_sensors; i++){
+        strcpy(path, "/sensors/");
+        strcat(path, hal.sensors[i].name);
+        file = HALFS_insert(HALFS_root, path);
+        file->backend = hal.sensors + i;
+        file->ops.mode = 0444;
+    }
+
+    for (size_t i=0; i<hal.n_switchs; i++){
+        strcpy(path, "/switchs/");
+        strcat(path, hal.switchs[i].name);
+        file = HALFS_insert(HALFS_root, path);
+        file->backend = hal.switchs + i;
+        file->ops.mode = 0222;
+    }
+
+    for (size_t i=0; i<hal.n_animations; i++){
+        strcpy(path, "/animations/");
+        strcat(path, hal.animations[i].name);
+        file = HALFS_insert(HALFS_root, path);
+        file->backend = hal.animations + i;
+        file->ops.mode = 0222;
+    }
+}
+
+/*
+ * Detect arduino and launch I/O thread
+ */
+void * HALFS_init(struct fuse_conn_info *conn)
+{
+    glob_t globbuf;
+    globbuf.gl_offs = 0;
+
+    int flag = GLOB_DOOFFS;
+    for(size_t i = 0; i < sizeof(ARDUINO_DEV_PATH)/sizeof(char *); i++){
+        if (i == 1)
+            flag = flag | GLOB_APPEND;
+        glob(ARDUINO_DEV_PATH[i], flag, NULL, &globbuf);
+    }
+    printf("Found %lu possible arduinos in /dev/\n", (long unsigned int) globbuf.gl_pathc);
+    for (size_t i = 0; i < globbuf.gl_pathc; i++){
+        printf("Trying %s\n", globbuf.gl_pathv[i]);
+        if (HAL_init(&hal, globbuf.gl_pathv[i]))
+            break;
+    }
+    globfree(&globbuf);
+
+    if (! hal.ready){
+        fprintf(stderr, "Unable to find suitable arduino; force quit\n");
+        exit(EXIT_FAILURE);
+    }
+    HALFS_build();
+    return NULL;
+}
+
+
+/* ================= FUSE Operations ================= */
+static int HALFS_open(const char *path, struct fuse_file_info *fi)
+{
+    HALFS *file = HALFS_find(HALFS_root, path);
+    if (file)
+        return 0;
+    return -ENOENT;
+}
+
+static int HALFS_read(
+    const char *path, 
+    char *buf, 
+    size_t size, 
+    off_t offset,
+    struct fuse_file_info *fi
+){
+    HALFS *file = HALFS_find(HALFS_root, path);
+    if (file)
+        return file->ops.read(file->backend, buf, size, offset);
+    return -ENOENT;
+}
+
+
+static int HALFS_write(
+    const char *path, 
+    const char *buf, 
+    size_t size, 
+    off_t offset,
+    struct fuse_file_info *fi
+){
+    HALFS *file = HALFS_find(HALFS_root, path);
+    if (file)
+        return file->ops.write(file->backend, buf, size, offset);
+    return -ENOENT;
+}
+
+static int HALFS_size(const char *path, struct fuse_file_info *fi)
+{
+    HALFS *file = HALFS_find(HALFS_root, path);
+    if (file)
+        return file->ops.size(file->backend);
+    return -ENOENT;
+}
+
+
+static int HALFS_trunc(const char *path, off_t offset) 
+{
+    HALFS *file = HALFS_find(HALFS_root, path);
+    if (file)
+        return file->ops.trunc(file->backend);
+    return -ENOENT;
+}
+
+static int HALFS_readdir(
+    const char *path, 
+    void *buf, 
+    fuse_fill_dir_t filler,
+    off_t offset, 
+    struct fuse_file_info *fi
+){
+
+    HALFS *dir = HALFS_find(HALFS_root, path);
+    if (! dir)
+        return -ENOENT;
+
+    filler(buf, ".", NULL, 0);
+    filler(buf, "..", NULL, 0);
+
+    for (HALFS *it=dir->first_child; it!=NULL; it=it->next_sibling)
+        filler(buf, it->name, NULL, 0);
+
     return 0;
 }
 
-/* cat /state */
-int state_read(const char *file, char *buffer, size_t size, off_t offset)
+static int HALFS_readlink(const char *path, char *buf, size_t size)
 {
-    HALState state;
-    HAL_READ(&arduino, state, state);
-
-    if (state <= ALERT){
-        int l = min(strlen(STATE_NAMES[state]), size);
-        memcpy(buffer, STATE_NAMES[state], l);
-        return l;
-    }
-    return 0;
-}
-
-int sensor_size(const char *path)
-{
-    return 4;
-}
-
-
-/* "temp_radia", "light_out", "temp_amb", "light_in", "temp_lm35", "Analog5" */
-
-/* cat /sensor/<name> */
-int sensor_read(const char *file, char *buffer, size_t size, off_t offset)
-{
-    const char *sensor = strrchr(file, '/')+1;
-    int val = 0;
-
-    if (streq(sensor, "light_inside")){
-        HAL_askAnalog(&arduino, 3);
-        HAL_READ(&arduino, light_inside, val);
-    }
-    else if (streq(sensor, "light_outside")){
-        HAL_askAnalog(&arduino, 1);
-        HAL_READ(&arduino, light_outside, val);
-    }
-    else if (streq(sensor, "temp_ambiant")){
-        HAL_askAnalog(&arduino, 2);
-        HAL_READ(&arduino, temp_ambiant, val);
-    }
-    else if (streq(sensor, "temp_radiator")){
-        HAL_askAnalog(&arduino, 0);
-        HAL_READ(&arduino, temp_radiator, val);
-    }
-
-    snprintf(buffer, size, "%4d", val);
-    return min(size, 4);
-}
-
-int trigger_size(const char *path)
-{
-    return 1;
-}
-
-int trigger_read(const char *file, char *buffer, size_t size, off_t offset)
-{
-    const char *trig = strrchr(file, '/')+1;
-    int val = 0;
-
-    if (streq(trig, "door")){
-        HAL_READ(&arduino, door, val);
-    }
-    else if (streq(trig, "bell")){
-        HAL_READ(&arduino, bell, val);
-    }
-    else if (streq(trig, "radiator")){
-        HAL_READ(&arduino, radiator, val);
-    }
-    else if (streq(trig, "passage")){
-        HAL_READ(&arduino, passage, val);
-    }
-    else if (streq(trig, "on")){
-        HAL_READ(&arduino, on, val);
-    }
-
-    buffer[0] = val ? '1' : '0';
-    return 1;
-}
-
-int anim_curve_write(const char *file, const char *buffer, size_t size, off_t offset)
-{
-    DirTree *parentdir = DirTree_findParent(halfs_root, file);
-    if (parentdir){
-        unsigned char len = min(size, 0xff);
-        if (streq(parentdir->name, "R")){
-            HAL_uploadAnim(&arduino, 0, len, (unsigned char*) buffer+offset);
-            return len;
-        }
-        else if (streq(parentdir->name, "B")){
-            HAL_uploadAnim(&arduino, 1, len, (unsigned char*) buffer+offset);
-            return len;
-        }
+    HALFS *file = HALFS_find(HALFS_root, path);
+    if (file){
+        if (file->ops.target == NULL)
+            return -ENOENT;
+        strcpy(buf, file->ops.target);
+        return 0;
     }
     return -ENOENT;
 }
 
-int anim_fps_write(const char *file, const char *buffer, size_t size, off_t offset)
-{
-    DirTree *parentdir = DirTree_findParent(halfs_root, file);
-    if (parentdir){
-        char *endptr;
-        int fps = strtol(buffer, &endptr, 10);
-        if (endptr > buffer && fps > 0){
-            if (fps > 0xff)
-                fps = 0xff;
-            if (streq(parentdir->name, "R")){
-                HAL_setFPSAnim(&arduino, 0, fps);
-                return size;
-            }
-            else if (streq(parentdir->name, "B")){
-                HAL_setFPSAnim(&arduino, 1, fps);
-                return size;
-            }
-        }
-    }
-    return -ENOENT;
-}
-
-int anim_reset_write(const char *file, const char *buffer, size_t size, off_t offset)
-{
-    DirTree *parentdir = DirTree_findParent(halfs_root, file);
-    if (parentdir){
-        if (streq(parentdir->name, "R")){
-            HAL_resetAnim(&arduino, 0);
-            return size;
-        } else if (streq(parentdir->name, "B")){
-            HAL_resetAnim(&arduino, 1);
-            return size;
-        }
-    }
-    return -ENOENT;
-}
-
-/*! echo > /open */
-int open_write(const char * file, const char * buffer, size_t size, off_t offset)
-{
-    if (buffer[0] == '1')
-        HAL_on(&arduino);
-    else
-        HAL_off(&arduino);
-    return size;
-}
-
-halfs_file all_paths[] = {
-    /* Arduino state */
-    {
-        .name = "/version",
-        .mode = 0444,
-        .read_callback = version_read,
-        .size_callback = version_size
-    },
-    {
-        .name = "/state",
-        .mode = 0444,
-        .read_callback = state_read,
-        .size_callback = state_size
-    },
-    /* Symlink test */
-    {
-        .name = "/demo-symlink",
-        .mode = 0444,
-        .target = "../driver.c"
-    },
-
-    /* Analog sensors: [0, 1023] */
-    {
-        .name = "/sensors/light_inside",
-        .mode = 0444,
-        .read_callback = sensor_read,
-        .size_callback = sensor_size
-    },
-    {
-        .name = "/sensors/light_outside",
-        .mode = 0444,
-        .read_callback = sensor_read,
-        .size_callback = sensor_size
-    },
-    {
-        .name = "/sensors/temp_ambiant",
-        .mode = 0444,
-        .read_callback = sensor_read,
-        .size_callback = sensor_size
-    },
-    {
-        .name = "/sensors/temp_radiator",
-        .mode = 0444,
-        .read_callback = sensor_read,
-        .size_callback = sensor_size
-    },
-
-    /* Digital sensors: {0, 1} */
-    {
-        .name = "/triggers/door",
-        .mode = 0444,
-        .read_callback = trigger_read,
-        .size_callback = trigger_size
-    },
-    {
-        .name = "/triggers/bell",
-        .mode = 0444,
-        .read_callback = trigger_read,
-        .size_callback = trigger_size
-    },
-    {
-        .name = "/triggers/radiator",
-        .mode = 0444,
-        .read_callback = trigger_read,
-        .size_callback = trigger_size
-    },
-    {
-        .name = "/triggers/passage",
-        .mode = 0444,
-        .read_callback = trigger_read,
-        .size_callback = trigger_size
-    },
-    {
-        .name = "/triggers/on",
-        .mode = 0444,
-        .read_callback = trigger_read,
-        .size_callback = trigger_size
-    },
-
-    /* Ledstrips */
-    {.name="/leds/R/curve", .mode=0222, .write_callback=anim_curve_write},
-    {.name="/leds/R/fps"  , .mode=0222, .write_callback=anim_fps_write},
-    {.name="/leds/R/reset", .mode=0222, .write_callback=anim_reset_write},
-    {.name="/leds/B/curve", .mode=0222, .write_callback=anim_curve_write},
-    {.name="/leds/B/fps"  , .mode=0222, .write_callback=anim_fps_write},
-    {.name="/leds/B/reset", .mode=0222, .write_callback=anim_reset_write},
-
-    /* open/close hackerspace */
-    {
-        .name = "/open",
-        .mode = 0222,
-        .write_callback = open_write
-    }
-};
-
-const size_t N_PATHS = sizeof(all_paths)/sizeof(struct halfs_file);
-
-static int halfs_trunc(const char *path, off_t size){
-    return 0;
-}
-
-static int halfs_getattr(const char *path, struct stat *stbuf)
+static int HALFS_getattr(const char *path, struct stat *stbuf)
 {
     memset(stbuf, 0, sizeof(struct stat));
-
-    DirTree *file = DirTree_find(halfs_root, path);
+    HALFS *file = HALFS_find(HALFS_root, path);
     if (! file)
         return -ENOENT;
 
@@ -334,140 +205,37 @@ static int halfs_getattr(const char *path, struct stat *stbuf)
     stbuf->st_gid = getgid();
 
     if (file->first_child){
-        /* has child => Directory */
+        /* has child: Directory */
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
+    } else if (file->ops.target != NULL){
+        /* has target: Symlink */
+        stbuf->st_mode = S_IFLNK | file->ops.mode;
+        stbuf->st_nlink = 1;
+        stbuf->st_size = strlen(file->ops.target);
     } else {
-        halfs_file *fileopts = (halfs_file *) file->payload;
-        if (fileopts->target == NULL){
-            stbuf->st_mode = S_IFREG | fileopts->mode;
-            stbuf->st_nlink = 1;
-            stbuf->st_size = fileopts->size_callback(path);
-        }
-        else{
-            stbuf->st_mode = S_IFLNK | fileopts->mode;
-            stbuf->st_nlink = 1;
-            stbuf->st_size = strlen(fileopts->target);
-        }
+        /* otherwise: Regular file */
+        stbuf->st_mode = S_IFREG | file->ops.mode;
+        stbuf->st_nlink = 1;
+        stbuf->st_size = file->ops.size(file->backend);
     }
 
     return 0;
-}
-
-void * halfs_init(struct fuse_conn_info *conn)
-{
-    glob_t globbuf;
-    globbuf.gl_offs = 0;
-
-    int flag = GLOB_DOOFFS;
-    for(int i = 0; i < sizeof(ARDUINO_DEV_PATH)/sizeof(char *); i++){
-        if (i == 1)
-            flag = flag | GLOB_APPEND;
-        glob(ARDUINO_DEV_PATH[i], flag, NULL, &globbuf);
-    }
-    printf("Found %i possible arduinos in /dev/\n", globbuf.gl_pathc);
-    for(int i = 0; i < globbuf.gl_pathc; i++){
-        printf("Trying %s\n", globbuf.gl_pathv[i]);
-        if(!HAL_init(&arduino, globbuf.gl_pathv[i], 115200))
-            continue;
-        HAL_start(&arduino);
-
-        // TODO: check version
-        HAL_askVersion(&arduino);
-
-    }
-    globfree(&globbuf);
-
-    halfs_root = DirTree_create("ROOT"); /* This name won't be used */
-    for (size_t i=0; i<N_PATHS; i++){
-        DirTree *file = DirTree_insert(halfs_root, all_paths[i].name);
-        file->payload = (void*) &(all_paths[i]);
-    }
-
-    return NULL;
-}
-
-static int halfs_open(const char *path, struct fuse_file_info *fi)
-{
-    DirTree *file = DirTree_find(halfs_root, path);
-    if (file)
-        return 0;
-    return -ENOENT;
-}
-
-static int halfs_read(const char *path, char *buf, size_t size, off_t offset,
-              struct fuse_file_info *fi)
-{
-    DirTree *file = DirTree_find(halfs_root, path);
-    if (file){
-        halfs_file *fileopts = file->payload;
-        return fileopts->read_callback(path, buf, size, offset);
-    }
-    return -ENOENT;
-}
-
-
-static int halfs_write(const char *path, const char *buf, size_t size, off_t offset,
-        struct fuse_file_info *fi) {
-
-    DirTree *file = DirTree_find(halfs_root, path);
-    if (file){
-        halfs_file *fileopts = file->payload;
-        return fileopts->write_callback(path, buf, size, offset);
-    }
-    return -ENOENT;
-}
-
-static int halfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-        off_t offset, struct fuse_file_info *fi) {
-
-    DirTree *dir = DirTree_find(halfs_root, path);
-    if (! dir)
-        return -ENOENT;
-
-    filler(buf, ".", NULL, 0);
-    filler(buf, "..", NULL, 0);
-
-    for (DirTree *it=dir->first_child; it!=NULL; it=it->next_sibling)
-        filler(buf, it->name, NULL, 0);
-
-    return 0;
-}
-
-static int halfs_readlink(const char *path, char *buf, size_t size){
-    DirTree *file = DirTree_find(halfs_root, path);
-    if (file){
-        halfs_file *fileopts = file->payload;
-        if(fileopts->target == NULL){
-            return -ENOENT;
-        }
-        strcpy(buf, fileopts->target);
-        return 0;
-    }
 }
 
 static struct fuse_operations hal_ops = {
-    .getattr    = halfs_getattr,
-    .readdir    = halfs_readdir,
-    .open       = halfs_open,
-    .read       = halfs_read,
-    .write      = halfs_write,
-    .truncate   = halfs_trunc,
-    .init       = halfs_init,
-    .readlink   = halfs_readlink
+    .getattr    = HALFS_getattr,
+    .readdir    = HALFS_readdir,
+    .open       = HALFS_open,
+    .read       = HALFS_read,
+    .write      = HALFS_write,
+    .truncate   = HALFS_trunc,
+    .init       = HALFS_init,
+    .readlink   = HALFS_readlink
 };
+/* ============================================== */
 
 int main(int argc, char *argv[])
 {
-    for (size_t i = 0; i < N_PATHS; i++){
-        if (all_paths[i].size_callback == NULL)
-            all_paths[i].size_callback = default_size_callback;
-        if (all_paths[i].trunc_callback == NULL)
-            all_paths[i].trunc_callback = default_trunc_callback;
-        if (all_paths[i].read_callback == NULL)
-            all_paths[i].read_callback = default_read_callback;
-        if (all_paths[i].write_callback == NULL)
-            all_paths[i].write_callback = default_write_callback;
-    }
     return fuse_main(argc, argv, &hal_ops, NULL);
 }

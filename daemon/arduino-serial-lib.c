@@ -40,7 +40,7 @@ arduino-serial-lib -- simple library for reading/writing serial ports
 #include <sys/select.h>
 
 /* Sleep for given number of seconds */
-static inline void minisleep(double secs)
+void minisleep(double secs)
 {
     int seconds = secs;
     int micros = secs*1000000 - seconds;
@@ -143,7 +143,7 @@ int serialport_writebyte( int fd, uint8_t b)
 //
 int serialport_write(int fd, const unsigned char* str)
 {
-    int len = strlen(str);
+    int len = strlen((const char *) str);
     int n = write(fd, str, len);
     if( n!=len ) {
         perror("serialport_write: couldn't write whole string\n");

@@ -1,6 +1,8 @@
 #ifndef DEFINE_UTILS_HEADER
 #define DEFINE_UTILS_HEADER
 
+#include <stdbool.h>
+
 static inline bool streq(const char *s1, const char *s2)
 {
     while (*s1 && *s2 && *s1 == *s2){
@@ -9,6 +11,9 @@ static inline bool streq(const char *s1, const char *s2)
     }
     return *s1 == *s2;
 }
+
+#define min(a, b) ((a) < (b)) ? (a) : (b)
+#define max(a, b) ((a) > (b)) ? (a) : (b)
 
 #define STRIP_JUNK "\r\n\t "
 #define strip(s) rstrip(lstrip(s, STRIP_JUNK), STRIP_JUNK)

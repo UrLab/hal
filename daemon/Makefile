@@ -1,19 +1,23 @@
+TARGET = driver
+OBJS = HALFS.o arduino-serial-lib.o com.o
+
 CC = gcc
-CFLAGS = -std=c99 -pedantic -Wno-unused-parameter -Wall -Wextra
-LDFLAGS = -lpthread
+DEFINES = -DFUSE_USE_VERSION=26 -D__USE_BSD -D_POSIX_C_SOURCE=200809L
+WARNINGS = -Wno-unused-function -Wno-unused-parameter -Wall -Wextra -Werror
+CFLAGS = -std=c99 -pedantic $(shell pkg-config --cflags fuse)
+LDFLAGS = -lpthread $(shell pkg-config --libs fuse)
 
-test: test.o arduino-serial-lib.o Ambianceduino.o
-	${CC} ${LDFLAGS} -o $@ $^
+all: ${TARGET}
 
-driver: driver.o arduino-serial-lib.o Ambianceduino.o dirtree.o
-	${CC} ${LDFLAGS} `pkg-config --libs fuse` -o $@ $^
-
-driver.o: driver.c
-	${CC} ${CFLAGS} ${CPPFLAGS} `pkg-config --cflags fuse` -c -o $@ $<
+${TARGET}: ${TARGET}.o ${OBJS}
+	${CC} -o $@ $^ ${LDFLAGS}
 
 %.o: %.c
-	${CC} ${CFLAGS} ${CPPFLAGS} -c -o $@ $<
+	${CC} ${DEFINES} ${WARNINGS} ${CFLAGS} ${CPPFLAGS} -c -o $@ $<
 
-.PHONY: clean
+.PHONY: clean mrproper
 clean:
 	rm -f *.o
+
+mrproper:
+	rm -f ${TARGET}
