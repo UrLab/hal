@@ -134,8 +134,8 @@ int serialport_close( int fd )
 //
 int serialport_writebyte( int fd, uint8_t b)
 {
-    int n = write(fd,&b,1);
-    if( n!=1)
+    int n = write(fd, &b, 1);
+    if (n != 1)
         return -1;
     return 0;
 }

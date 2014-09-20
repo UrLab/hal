@@ -231,7 +231,11 @@ void HAL_upload_anim(
     serialport_writebyte(hal->serial_fd, 'A');
     serialport_writebyte(hal->serial_fd, anim_id);
     serialport_writebyte(hal->serial_fd, len);
-    for (unsigned char i=0; i<len; i++)
-        serialport_writebyte(hal->serial_fd, frames[i]);
+    for (unsigned char i=0; i<len; i++){
+        if (serialport_writebyte(hal->serial_fd, frames[i]))
+            printf("\033[31;1mERREUR %hhu !!!\033[0m\n", i);
+        if (i%10 == 0)
+            minisleep(0.001);
+    }
     printf("\033[31mA%hhu:%hhu\033[0m\n", anim_id, len);
 }

@@ -28,7 +28,14 @@ Sensor sensors[] = {
 };
 
 void setup(){
+    unsigned char n = 50;
+
     Serial.begin(115200);
+    for (int i=0; i<N_ANIMATIONS; i++){
+        animations[i].setLen(n);
+        for (int j=0; j<n; j++)
+            animations[i][j] = j;
+    }
 }
 
 unsigned long int now=0, last_com=0, last_ping=0, lag=0;
@@ -83,9 +90,9 @@ void com(){
         /* Set switch or ask for status */
         case 'S':
             while (! Serial.available());
-            c = Serial.read();
+            c = Serial.read(); //switch id
             while (! Serial.available());
-            d = Serial.read();
+            d = Serial.read(); //switch status
             if (c < N_SWITCHS){
                 switch (d){
                     case 0: switchs[c].deactivate(); break;
@@ -100,9 +107,9 @@ void com(){
         /* Upload animation */
         case 'A':
             while (! Serial.available());
-            c = Serial.read();
+            c = Serial.read(); //anim id
             while (! Serial.available());
-            d = Serial.read();
+            d = Serial.read(); //number of frames
             
             for (j=0; j<d; j++){
                 while (! Serial.available());
@@ -137,6 +144,7 @@ Switch & power = switchs[0];
 
 void loop(){
     now = millis();
+
     if (now - last_com > 750 && now - last_ping > 1000){
         Serial.println("*");
         last_ping = now;

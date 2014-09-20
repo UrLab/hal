@@ -83,6 +83,7 @@ class Animation : public Resource {
                 /* 1 shot: stop when end has been reached */
                 if (! _loop && _i == 0)
                     _play = false;
+                _tlast = t;
             }
             analogWrite(pin(), _frames[_i]);
         }
