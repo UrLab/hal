@@ -71,13 +71,24 @@ class Animation : public Resource {
             memset(_frames, 0, sizeof(_frames));
             pinMode(pin, OUTPUT);
         }
+        unsigned char getLen() const {return _len;}
         void setLen(unsigned char len){_len = len;}
-        void setLoop(bool loop){_loop = loop;}
+
+        bool getDelay() const {return _delay;}
         void setDelay(unsigned int delay){_delay = delay;}
+
+        bool isLoop() const {return _loop;}
+        void setLoop(bool loop){_loop = loop;}
+
+        bool isPlaying() const {return _play;}
+        void play(bool stop=false){_play = ! stop;}
+
         unsigned char &operator[](unsigned char i){return _frames[i];}
         void run(unsigned long int t){
-            if (_len == 0 || ! _play)
+            if (_len == 0 || ! _play){
                 analogWrite(pin(), 0);
+                return;
+            }
             if (t - _tlast >= _delay){
                 _i = (_i+1)%_len;
                 /* 1 shot: stop when end has been reached */

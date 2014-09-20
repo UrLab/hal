@@ -10,7 +10,11 @@
 typedef struct HALResource_t {
     char *name;
     char type, id;
-    void *data;
+    union {
+        void *ptr;
+        unsigned char u4[4];
+        bool b;
+    } data;
     pthread_mutex_t mutex;
     pthread_cond_t   cond;
 } HALResource;

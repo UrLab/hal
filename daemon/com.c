@@ -156,6 +156,8 @@ void *HAL_read_thread(void *args)
 
         line = strip(buf);
         len = strlen(line);
+        if (len == 0)
+            continue;
 
         printf("\033[1;33m>> [%lu] %s\033[0m\n", len, line);
 
@@ -181,8 +183,7 @@ void *HAL_read_thread(void *args)
 
             pthread_mutex_lock(&(resource->mutex));
             /* Update value */
-            bool *valptr = (bool*) &resource->data;
-            *valptr = (bool) val;
+            resource->data.b = (bool) val;
 
             /* Notify potential readers that the value is available */
             pthread_cond_broadcast(&(resource->cond));
@@ -195,31 +196,70 @@ void *HAL_read_thread(void *args)
                 HAL_socket_write(hal, buf);
             }
         }
+
+        else if (cmd == 'a'){
+            HALResource *anim = NULL;
+            char *sep = strchr(line, ':');
+            *sep = '\0';
+            int id = strtol(line, NULL, 10);
+
+            anim = hal->animations+i;
+            sep++;
+
+            pthread_mutex_lock(&(anim->mutex));
+            /* Update value */
+            switch (*sep){
+                case 'l': anim->data.u4[0] = (sep[1] == '1'); break;
+                case 'p': anim->data.u4[1] = (sep[1] == '1'); break;
+                case 'd': 
+                    id = strtol(sep+1, NULL, 10);
+                    anim->data.u4[2] = id;
+            }
+
+            printf("\033[41mBROADCAST\033[0m\n");
+
+            /* Notify potential readers that the value is available */
+            pthread_cond_broadcast(&(anim->cond));
+            pthread_mutex_unlock(&(anim->mutex));
+        }
     }
     return NULL;
 }
 
+typedef const unsigned char cuchar;
+#define say(hal, char_array) HAL_say((hal), sizeof(char_array), (char_array))
+static inline void HAL_say(struct HAL_t *hal, size_t len, cuchar *bytes)
+{
+    printf("\033[31;1m<< ");
+    for (size_t i=0; i<len; i++){
+        if (('a'<=bytes[i] && bytes[i]<='z') || ('A'<=bytes[i] && bytes[i]<='Z') || ('0'<=bytes[i] && bytes[i]<='9'))
+            putchar(bytes[i]);
+        else
+        printf("<%hhx>", bytes[i]);            
+        for (int j=0; j<5; i++)
+            if (serialport_writebyte(hal->serial_fd, bytes[i]))
+                minisleep(0.00001);
+            else break;
+    }
+    printf("\033[0m\n");
+}
+
 void HAL_ask_trigger(struct HAL_t *hal, int trig_id)
 {
-    serialport_writebyte(hal->serial_fd, 'T');
-    serialport_writebyte(hal->serial_fd, trig_id);
-    printf("\033[31mT%d\033[0m\n", trig_id);
+    cuchar req[] = {'T', trig_id};
+    say(hal, req);
 }
 
 void HAL_set_switch(struct HAL_t *hal, int switch_id, bool on)
 {
-    serialport_writebyte(hal->serial_fd, 'S');
-    serialport_writebyte(hal->serial_fd, switch_id);
-    serialport_writebyte(hal->serial_fd, on ? 1 : 0);
-    printf("\033[31mS%d%d\033[0m\n", switch_id, on ? 1 : 0);
+    cuchar req[] = {'S', switch_id, on ? 1 : 0};
+    say(hal, req);
 }
 
 void HAL_ask_switch(struct HAL_t *hal, int switch_id)
 {
-    serialport_writebyte(hal->serial_fd, 'S');
-    serialport_writebyte(hal->serial_fd, switch_id);
-    serialport_writebyte(hal->serial_fd, 42);
-    printf("\033[31mS%d%d\033[0m\n", switch_id, 42);
+    cuchar req[] = {'S', switch_id, 42};
+    say(hal, req);
 }
 
 void HAL_upload_anim(
@@ -228,14 +268,43 @@ void HAL_upload_anim(
     unsigned char len, 
     const unsigned char *frames
 ){
-    serialport_writebyte(hal->serial_fd, 'A');
-    serialport_writebyte(hal->serial_fd, anim_id);
-    serialport_writebyte(hal->serial_fd, len);
-    for (unsigned char i=0; i<len; i++){
-        if (serialport_writebyte(hal->serial_fd, frames[i]))
-            printf("\033[31;1mERREUR %hhu !!!\033[0m\n", i);
-        if (i%10 == 0)
-            minisleep(0.001);
-    }
-    printf("\033[31mA%hhu:%hhu\033[0m\n", anim_id, len);
+    cuchar req[] = {'A', anim_id, len};
+    say(hal, req);
+    HAL_say(hal, len, frames);
+}
+
+void HAL_ask_anim_play(struct HAL_t *hal, int anim_id)
+{
+    cuchar req[] = {'a', anim_id, 'p', 42};
+    say(hal, req);
+}
+
+void HAL_set_anim_play(struct HAL_t *hal, int anim_id, bool play)
+{
+    cuchar req[] = {'a', anim_id, 'p', play ? 1 : 0};
+    say(hal, req);
+}
+
+void HAL_ask_anim_loop(struct HAL_t *hal, int anim_id)
+{
+    cuchar req[] = {'a', anim_id, 'l', 42};
+    say(hal, req);
+}
+
+void HAL_set_anim_loop(struct HAL_t *hal, int anim_id, bool loop)
+{
+    cuchar req[] = {'a', anim_id, 'l', loop ? 1 : 0};
+    say(hal, req);
+}
+
+void HAL_ask_anim_delay(struct HAL_t *hal, int anim_id)
+{
+    cuchar req[] = {'a', anim_id, 'd', 0};
+    say(hal, req);
+}
+
+void HAL_set_anim_delay(struct HAL_t *hal, int anim_id, unsigned char delay)
+{
+    cuchar req[] = {'a', anim_id, 'd', delay};
+    say(hal, req);
 }

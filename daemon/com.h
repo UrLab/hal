@@ -19,5 +19,11 @@ void HAL_upload_anim(
     unsigned char len, 
     const unsigned char *frames
 );
+void HAL_ask_anim_play(struct HAL_t *hal, int anim_id);
+void HAL_set_anim_play(struct HAL_t *hal, int anim_id, bool play);
+void HAL_ask_anim_loop(struct HAL_t *hal, int anim_id);
+void HAL_set_anim_loop(struct HAL_t *hal, int anim_id, bool loop);
+void HAL_ask_anim_delay(struct HAL_t *hal, int anim_id);
+void HAL_set_anim_delay(struct HAL_t *hal, int anim_id, unsigned char delay);
 
 #endif

@@ -125,6 +125,45 @@ void com(){
             Serial.println(d, DEC);
             break;
 
+        /* Animation settings */
+        case 'a':
+            while (! Serial.available());
+            c = Serial.read(); //anim id
+            while (! Serial.available());
+            d = Serial.read(); //request type {'l'(oop), 'p'(lay), 'd'(elay)}
+            while (! Serial.available());
+            e = Serial.read(); //param
+
+            if (c < N_ANIMATIONS){
+                switch (d){
+                    case 'l':
+                        if (e <= 1)
+                            animations[c].setLoop(e);
+                        Serial.print("a");
+                        Serial.print(c, DEC);
+                        Serial.println(animations[c].isLoop() ? ":l1" : ":l0");
+                        break;
+
+                    case 'p':
+                        if (e <= 1)
+                            animations[c].play(! e);
+                        Serial.print("a");
+                        Serial.print(c, DEC);
+                        Serial.println(animations[c].isPlaying() ? ":p1" : ":p0");
+                        break;
+
+                    case 'd':
+                        if (e > 0)
+                            animations[c].setDelay(e);
+                        Serial.print("a");
+                        Serial.print(c, DEC);
+                        Serial.print(":d");
+                        Serial.println(animations[c].getDelay(), DEC);
+                        break;
+                }
+            }
+            break;
+
         /* Ask for trigger status */
         case 'T':
             while (! Serial.available());

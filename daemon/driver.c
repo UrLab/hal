@@ -40,7 +40,7 @@ int trigger_read(HALResource *trig, char *buffer, size_t size, off_t offset)
     pthread_mutex_lock(&trig->mutex);
     HAL_ask_trigger(&hal, trig->id);
     pthread_cond_wait(&trig->cond, &trig->mutex);
-    strcpy(buffer, (bool)(trig->data) ? "1" : "0");
+    strcpy(buffer, (trig->data.b) ? "1" : "0");
     pthread_mutex_unlock(&trig->mutex);
     return 2;
 }
@@ -51,8 +51,10 @@ int switch_read(HALResource *sw, char *buffer, size_t size, off_t offset)
 {
     pthread_mutex_lock(&sw->mutex);
     HAL_ask_switch(&hal, sw->id);
+    printf("\033[32mWAIT\033[0m\n");
     pthread_cond_wait(&sw->cond, &sw->mutex);
-    strcpy(buffer, (bool)(sw->data) ? "1" : "0");
+    printf("\033[32mOK\033[0m\n");
+    strcpy(buffer, sw->data.b ? "1" : "0");
     pthread_mutex_unlock(&sw->mutex);
     return 2;
 }
@@ -72,6 +74,68 @@ int animation_upload(HALResource *anim, const char *buffer, size_t size, off_t o
     HAL_upload_anim(&hal, anim->id, min(255, size), (const unsigned char*) buffer);
     pthread_mutex_unlock(&anim->mutex);
     return size;
+}
+
+int anim_loop_write(HALResource *sw, const char *buffer, size_t size, off_t offset)
+{
+    long int val = strtol(buffer, NULL, 10);
+    pthread_mutex_lock(&sw->mutex);
+    HAL_set_anim_loop(&hal, sw->id, val ? true : false);
+    pthread_mutex_unlock(&sw->mutex);
+    return size;
+}
+
+int anim_loop_read(HALResource *anim, char *buffer, size_t size, off_t offset)
+{
+    pthread_mutex_lock(&anim->mutex);
+    HAL_ask_anim_loop(&hal, anim->id);
+    pthread_cond_wait(&anim->cond, &anim->mutex);
+    strcpy(buffer, (bool)(anim->data.u4[0]) ? "1" : "0");
+    pthread_mutex_unlock(&anim->mutex);
+    return 2;
+}
+
+int anim_play_write(HALResource *sw, const char *buffer, size_t size, off_t offset)
+{
+    long int val = strtol(buffer, NULL, 10);
+    pthread_mutex_lock(&sw->mutex);
+    HAL_set_anim_play(&hal, sw->id, val ? true : false);
+    pthread_mutex_unlock(&sw->mutex);
+    return size;
+}
+
+int anim_play_read(HALResource *anim, char *buffer, size_t size, off_t offset)
+{
+    pthread_mutex_lock(&anim->mutex);
+    HAL_ask_anim_play(&hal, anim->id);
+    pthread_cond_wait(&anim->cond, &anim->mutex);
+    strcpy(buffer, (bool)(anim->data.u4[1]) ? "1" : "0");
+    pthread_mutex_unlock(&anim->mutex);
+    return 2;
+}
+
+int anim_fps_write(HALResource *sw, const char *buffer, size_t size, off_t offset)
+{
+    long int fps = strtol(buffer, NULL, 10);
+    unsigned int delay = 1000/fps;
+    if (delay == 0)
+        delay = 1;
+
+    pthread_mutex_lock(&sw->mutex);
+    HAL_set_anim_delay(&hal, sw->id, delay);
+    pthread_mutex_unlock(&sw->mutex);
+    return size;
+}
+
+int anim_fps_read(HALResource *anim, char *buffer, size_t size, off_t offset)
+{
+    int res = 0;
+    pthread_mutex_lock(&anim->mutex);
+    HAL_ask_anim_loop(&hal, anim->id);
+    pthread_cond_wait(&anim->cond, &anim->mutex);
+    snprintf(buffer, size, "%hhu%n", anim->data.u4[2], &res);
+    pthread_mutex_unlock(&anim->mutex);
+    return res;
 }
 
 /*
@@ -128,6 +192,33 @@ static void HALFS_build()
         file->backend = hal.animations + i;
         file->ops.mode = 0222;
         file->ops.write = animation_upload;
+
+        strcpy(path, "/animations/");
+        strcat(path, hal.animations[i].name);
+        strcat(path, "/play");
+        file = HALFS_insert(HALFS_root, path);
+        file->backend = hal.animations + i;
+        file->ops.mode = 0666;
+        file->ops.read = anim_play_read;
+        file->ops.write = anim_play_write;
+
+        strcpy(path, "/animations/");
+        strcat(path, hal.animations[i].name);
+        strcat(path, "/loop");
+        file = HALFS_insert(HALFS_root, path);
+        file->backend = hal.animations + i;
+        file->ops.mode = 0666;
+        file->ops.read = anim_loop_read;
+        file->ops.write = anim_loop_write;
+
+        strcpy(path, "/animations/");
+        strcat(path, hal.animations[i].name);
+        strcat(path, "/fps");
+        file = HALFS_insert(HALFS_root, path);
+        file->backend = hal.animations + i;
+        file->ops.mode = 0666;
+        file->ops.read = anim_fps_read;
+        file->ops.write = anim_fps_write;
     }
 }
 
