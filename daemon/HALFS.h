@@ -4,6 +4,9 @@
 #include "HALResource.h"
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <fuse.h>
+
+extern struct fuse_operations HALFS_ops;
 
 typedef struct HALFS_t HALFS;
 

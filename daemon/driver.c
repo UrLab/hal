@@ -12,6 +12,8 @@
 #include "com.h"
 #include "utils.h"
 
+pthread_t com_thread;
+
 /* Root of virtual file system */
 HALFS *HALFS_root = NULL;
 
@@ -33,6 +35,37 @@ int version_read(HALResource *backend, char * buffer, size_t size, off_t offset)
     return l;
 }
 
+int trigger_read(HALResource *trig, char *buffer, size_t size, off_t offset)
+{
+    pthread_mutex_lock(&trig->mutex);
+    HAL_ask_trigger(&hal, trig->id);
+    pthread_cond_wait(&trig->cond, &trig->mutex);
+    strcpy(buffer, (bool)(trig->data) ? "1" : "0");
+    pthread_mutex_unlock(&trig->mutex);
+    return 2;
+}
+
+int trigger_size(HALResource *backend){return 2;}
+
+int switch_read(HALResource *sw, char *buffer, size_t size, off_t offset)
+{
+    pthread_mutex_lock(&sw->mutex);
+    HAL_ask_switch(&hal, sw->id);
+    pthread_cond_wait(&sw->cond, &sw->mutex);
+    strcpy(buffer, (bool)(sw->data) ? "1" : "0");
+    pthread_mutex_unlock(&sw->mutex);
+    return 2;
+}
+
+int switch_write(HALResource *sw, const char *buffer, size_t size, off_t offset)
+{
+    long int val = strtol(buffer, NULL, 10);
+    pthread_mutex_lock(&sw->mutex);
+    HAL_set_switch(&hal, sw->id, val ? true : false);
+    pthread_mutex_unlock(&sw->mutex);
+    return size;
+}
+
 /*
  * Build HALFS tree structure from detected I/O
  */
@@ -50,6 +83,8 @@ static void HALFS_build()
         file = HALFS_insert(HALFS_root, path);
         file->backend = hal.triggers + i;
         file->ops.mode = 0444;
+        file->ops.read = trigger_read;
+        file->ops.size = trigger_size;
     }
 
     for (size_t i=0; i<hal.n_sensors; i++){
@@ -65,7 +100,10 @@ static void HALFS_build()
         strcat(path, hal.switchs[i].name);
         file = HALFS_insert(HALFS_root, path);
         file->backend = hal.switchs + i;
-        file->ops.mode = 0222;
+        file->ops.mode = 0666;
+        file->ops.read = switch_read;
+        file->ops.write = switch_write;
+        file->ops.size = trigger_size;
     }
 
     for (size_t i=0; i<hal.n_animations; i++){
@@ -104,6 +142,7 @@ void * HALFS_init(struct fuse_conn_info *conn)
         exit(EXIT_FAILURE);
     }
     HALFS_build();
+    pthread_create(&com_thread, NULL, HAL_read_thread, &hal);
     return NULL;
 }
 

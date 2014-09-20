@@ -10,12 +10,18 @@
 typedef struct HALResource_t {
     char *name;
     char type, id;
+    void *data;
     pthread_mutex_t mutex;
     pthread_cond_t   cond;
 } HALResource;
 
+#define HAL_SOCK_MAXCLIENTS 32
+
 struct HAL_t {
     int serial_fd;
+    int socket_fd;
+    int socket_n_clients;
+    int socket_clients[HAL_SOCK_MAXCLIENTS];
 
     char version[41];
     bool ready;
