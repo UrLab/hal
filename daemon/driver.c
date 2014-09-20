@@ -73,9 +73,15 @@ static void HALFS_build()
 {
     char path[128];
     HALFS_root = HALFS_create("/");
+
+
     HALFS * file = HALFS_insert(HALFS_root, "/version");
     file->ops.read = version_read;
     file->ops.size = version_size;
+
+    file = HALFS_insert(HALFS_root, "/events");
+    file->ops.mode = 0444;
+    file->ops.target = "/tmp/hal.sock";
     
     for (size_t i=0; i<hal.n_triggers; i++){
         strcpy(path, "/triggers/");
@@ -141,6 +147,7 @@ void * HALFS_init(struct fuse_conn_info *conn)
         fprintf(stderr, "Unable to find suitable arduino; force quit\n");
         exit(EXIT_FAILURE);
     }
+    HAL_socket_open(&hal, "/tmp/hal.sock");
     HALFS_build();
     pthread_create(&com_thread, NULL, HAL_read_thread, &hal);
     return NULL;

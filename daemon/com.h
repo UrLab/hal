@@ -6,6 +6,8 @@
 
 bool HAL_init(struct HAL_t *hal, const char *arduino_dev);
 
+void HAL_socket_open(struct HAL_t *hal, const char *path);
+
 void *HAL_read_thread(void *args);
 
 void HAL_ask_trigger(struct HAL_t *hal, int trig_id);

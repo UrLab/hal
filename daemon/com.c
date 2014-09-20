@@ -3,6 +3,11 @@
 #include "utils.h"
 #include <unistd.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/select.h>
+#include <sys/time.h>
 
 bool HAL_init(struct HAL_t *hal, const char *arduino_dev)
 {
@@ -94,7 +99,17 @@ bool HAL_init(struct HAL_t *hal, const char *arduino_dev)
 
 void HAL_socket_open(struct HAL_t *hal, const char *path)
 {
-    hal->socket_fd = 0;
+    size_t len;
+    struct sockaddr_un sock_desc;
+    hal->socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+
+    sock_desc.sun_family = AF_UNIX;
+    strcpy(sock_desc.sun_path, path);
+    unlink(sock_desc.sun_path);
+    
+    len = strlen(sock_desc.sun_path) + sizeof(sock_desc.sun_family);
+    bind(hal->socket_fd, (struct sockaddr *)&sock_desc, len);
+    listen(hal->socket_fd, HAL_SOCK_MAXCLIENTS);
 }
 
 void HAL_socket_write(struct HAL_t *hal, const char *msg)
@@ -110,6 +125,20 @@ void HAL_socket_write(struct HAL_t *hal, const char *msg)
     }
 }
 
+static void HAL_socket_accept(struct HAL_t *hal)
+{
+    fd_set set;
+    struct timeval timeout = {.tv_sec = 0, .tv_usec = 1000};
+    FD_SET(hal->socket_fd, &set);
+    select(hal->socket_fd+1, &set, NULL, NULL, &timeout);
+    if (! FD_ISSET(hal->socket_fd, &set))
+        return;
+
+    int client = accept(hal->socket_fd, NULL, NULL);
+    hal->socket_clients[hal->socket_n_clients] = client;
+    hal->socket_n_clients++;
+}
+
 void *HAL_read_thread(void *args)
 {
     char buf[128];
@@ -120,8 +149,11 @@ void *HAL_read_thread(void *args)
     struct HAL_t *hal = (struct HAL_t *) args;
 
     while (true){
+        HAL_socket_accept(hal);
+
         if (! serialport_read_until(hal->serial_fd, buf, '\n', sizeof(buf), 100))
             continue;
+
         line = strip(buf);
         len = strlen(line);
 
@@ -159,8 +191,8 @@ void *HAL_read_thread(void *args)
             /* If state change, also write to socket */
             if (cmd == '!'){
                 strcpy(buf, resource->name);
-                strcat(buf, val ? ":1" : ":0");
-                //HAL_socket_write(hal, buf);
+                strcat(buf, val ? ":1\n" : ":0\n");
+                HAL_socket_write(hal, buf);
             }
         }
     }
