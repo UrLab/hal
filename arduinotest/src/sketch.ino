@@ -184,11 +184,14 @@ Switch & power = switchs[0];
 void loop(){
     now = millis();
 
+    /* Ping every second if no communication within last 750ms */
     if (now - last_com > 750 && now - last_ping > 1000){
         Serial.println("*");
         last_ping = now;
     }
-    if (now - last_com > 1000)
+
+    /* Power supply off if no communication within last 1.5s */
+    if (now - last_com > 1500)
         power.deactivate();
 
     if (Serial.available())
