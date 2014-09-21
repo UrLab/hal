@@ -53,6 +53,9 @@ and interacts with the Hackerspace crew.
 	|   `-- [-r--r--r--]  knife
 	`-- [-r--r--r--]  version
 
+	$ cat /dev/hal/version
+	0123456789abcdef0123456789abcdef01234567
+
 ## Hal Resources
 ### Switchs 
 
