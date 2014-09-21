@@ -201,22 +201,20 @@ void *HAL_read_thread(void *args)
             HALResource *anim = NULL;
             char *sep = strchr(line, ':');
             *sep = '\0';
-            int id = strtol(line, NULL, 10);
+            int id = strtol(line+1, NULL, 10);
 
-            anim = hal->animations+i;
+            anim = hal->animations+id;
             sep++;
 
             pthread_mutex_lock(&(anim->mutex));
             /* Update value */
             switch (*sep){
-                case 'l': anim->data.u4[0] = (sep[1] == '1'); break;
-                case 'p': anim->data.u4[1] = (sep[1] == '1'); break;
+                case 'l': anim->data.hhu4[0] = (sep[1] == '1'); break;
+                case 'p': anim->data.hhu4[1] = (sep[1] == '1'); break;
                 case 'd': 
                     id = strtol(sep+1, NULL, 10);
-                    anim->data.u4[2] = id;
+                    anim->data.hhu4[2] = id;
             }
-
-            printf("\033[41mBROADCAST\033[0m\n");
 
             /* Notify potential readers that the value is available */
             pthread_cond_broadcast(&(anim->cond));

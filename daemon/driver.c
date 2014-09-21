@@ -45,15 +45,13 @@ int trigger_read(HALResource *trig, char *buffer, size_t size, off_t offset)
     return 2;
 }
 
-int trigger_size(HALResource *backend){return 2;}
+int binary_size(HALResource *backend){return 2;}
 
 int switch_read(HALResource *sw, char *buffer, size_t size, off_t offset)
 {
     pthread_mutex_lock(&sw->mutex);
     HAL_ask_switch(&hal, sw->id);
-    printf("\033[32mWAIT\033[0m\n");
     pthread_cond_wait(&sw->cond, &sw->mutex);
-    printf("\033[32mOK\033[0m\n");
     strcpy(buffer, sw->data.b ? "1" : "0");
     pthread_mutex_unlock(&sw->mutex);
     return 2;
@@ -90,7 +88,7 @@ int anim_loop_read(HALResource *anim, char *buffer, size_t size, off_t offset)
     pthread_mutex_lock(&anim->mutex);
     HAL_ask_anim_loop(&hal, anim->id);
     pthread_cond_wait(&anim->cond, &anim->mutex);
-    strcpy(buffer, (bool)(anim->data.u4[0]) ? "1" : "0");
+    strcpy(buffer, (anim->data.hhu4[0]) ? "1" : "0");
     pthread_mutex_unlock(&anim->mutex);
     return 2;
 }
@@ -109,7 +107,7 @@ int anim_play_read(HALResource *anim, char *buffer, size_t size, off_t offset)
     pthread_mutex_lock(&anim->mutex);
     HAL_ask_anim_play(&hal, anim->id);
     pthread_cond_wait(&anim->cond, &anim->mutex);
-    strcpy(buffer, (bool)(anim->data.u4[1]) ? "1" : "0");
+    strcpy(buffer, (anim->data.hhu4[1]) ? "1" : "0");
     pthread_mutex_unlock(&anim->mutex);
     return 2;
 }
@@ -131,12 +129,16 @@ int anim_fps_read(HALResource *anim, char *buffer, size_t size, off_t offset)
 {
     int res = 0;
     pthread_mutex_lock(&anim->mutex);
-    HAL_ask_anim_loop(&hal, anim->id);
+    HAL_ask_anim_delay(&hal, anim->id);
     pthread_cond_wait(&anim->cond, &anim->mutex);
-    snprintf(buffer, size, "%hhu%n", anim->data.u4[2], &res);
+
+    unsigned int fps = 1000/anim->data.hhu4[2];
+    snprintf(buffer, size, "%hhu%n", fps, &res);
     pthread_mutex_unlock(&anim->mutex);
     return res;
 }
+
+int anim_fps_size(HALResource *backend){return 4;}
 
 /*
  * Build HALFS tree structure from detected I/O
@@ -162,7 +164,7 @@ static void HALFS_build()
         file->backend = hal.triggers + i;
         file->ops.mode = 0444;
         file->ops.read = trigger_read;
-        file->ops.size = trigger_size;
+        file->ops.size = binary_size;
     }
 
     for (size_t i=0; i<hal.n_sensors; i++){
@@ -181,7 +183,7 @@ static void HALFS_build()
         file->ops.mode = 0666;
         file->ops.read = switch_read;
         file->ops.write = switch_write;
-        file->ops.size = trigger_size;
+        file->ops.size = binary_size;
     }
 
     for (size_t i=0; i<hal.n_animations; i++){
@@ -201,6 +203,7 @@ static void HALFS_build()
         file->ops.mode = 0666;
         file->ops.read = anim_play_read;
         file->ops.write = anim_play_write;
+        file->ops.size = binary_size;
 
         strcpy(path, "/animations/");
         strcat(path, hal.animations[i].name);
@@ -210,6 +213,7 @@ static void HALFS_build()
         file->ops.mode = 0666;
         file->ops.read = anim_loop_read;
         file->ops.write = anim_loop_write;
+        file->ops.size = binary_size;
 
         strcpy(path, "/animations/");
         strcat(path, hal.animations[i].name);
@@ -272,9 +276,15 @@ static int HALFS_read(
     struct fuse_file_info *fi
 ){
     HALFS *file = HALFS_find(HALFS_root, path);
-    if (file)
-        return file->ops.read(file->backend, buf, size, offset);
-    return -ENOENT;
+    int res = -ENOENT;
+    if (file){
+        res = file->ops.read(file->backend, buf, size, offset);
+        printf("\033[1;35mREAD %s[%lu/%d]: \033[0m", path, size, res);
+        for (int i=0; i<res; i++)
+            printf("%02x", buf[i]);
+        puts("");
+    }
+    return res;
 }
 
 

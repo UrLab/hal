@@ -12,7 +12,7 @@ typedef struct HALResource_t {
     char type, id;
     union {
         void *ptr;
-        unsigned char u4[4];
+        unsigned char hhu4[4];
         bool b;
     } data;
     pthread_mutex_t mutex;
