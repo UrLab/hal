@@ -252,15 +252,19 @@ typedef const unsigned char cuchar;
 static inline void HAL_say(struct HAL_t *hal, size_t len, cuchar *bytes)
 {
     printf("\033[31;1m<< ");
+    int j;
     for (size_t i=0; i<len; i++){
         if (('a'<=bytes[i] && bytes[i]<='z') || ('A'<=bytes[i] && bytes[i]<='Z') || ('0'<=bytes[i] && bytes[i]<='9'))
             putchar(bytes[i]);
         else
-        printf("<%hhx>", bytes[i]);            
-        for (int j=0; j<5; i++)
-            if (serialport_writebyte(hal->serial_fd, bytes[i]))
-                minisleep(0.00001);
+            printf("<%02hhx>", bytes[i]);            
+        for (j=0; j<5; j++){
+            if (serialport_writebyte(hal->serial_fd, bytes[i]) != 0)
+                minisleep(0.0001);
             else break;
+        }
+        if (j == 5)
+            printf("\033[43m(ERR)\033[0;31;1m");
     }
     printf("\033[0m\n");
 }

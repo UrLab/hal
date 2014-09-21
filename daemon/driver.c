@@ -68,10 +68,11 @@ int switch_write(HALResource *sw, const char *buffer, size_t size, off_t offset)
 
 int animation_upload(HALResource *anim, const char *buffer, size_t size, off_t offset)
 {
+    unsigned char s = size&0xff;
     pthread_mutex_lock(&anim->mutex);
-    HAL_upload_anim(&hal, anim->id, min(255, size), (const unsigned char*) buffer);
+    HAL_upload_anim(&hal, anim->id, s, (const unsigned char*) buffer);
     pthread_mutex_unlock(&anim->mutex);
-    return size;
+    return s;
 }
 
 int anim_loop_write(HALResource *sw, const char *buffer, size_t size, off_t offset)
@@ -131,9 +132,7 @@ int anim_fps_read(HALResource *anim, char *buffer, size_t size, off_t offset)
     pthread_mutex_lock(&anim->mutex);
     HAL_ask_anim_delay(&hal, anim->id);
     pthread_cond_wait(&anim->cond, &anim->mutex);
-
     unsigned int fps = 1000/anim->data.hhu4[2];
-    printf("\033[32mFPS: %u\033[0m\n", fps);
     snprintf(buffer, size, "%hhu%n", fps, &res);
     pthread_mutex_unlock(&anim->mutex);
     return res+1; //include trailing '\0'
@@ -313,9 +312,15 @@ static int HALFS_write(
     struct fuse_file_info *fi
 ){
     HALFS *file = HALFS_find(HALFS_root, path);
-    if (file)
-        return file->ops.write(file->backend, buf, size, offset);
-    return -ENOENT;
+    int res = -ENOENT;
+    if (file){
+        res = file->ops.write(file->backend, buf, size, offset);
+        printf("\033[1;35mWRITE %s[%lu/%d]: \033[0m", path, size, res);
+        for (int i=0; i<res; i++)
+            printf("%02x", buf[i]);
+        puts("");
+    }
+    return res;
 }
 
 static int HALFS_size(const char *path, struct fuse_file_info *fi)
