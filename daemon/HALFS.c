@@ -137,3 +137,15 @@ HALFS *HALFS_insert(HALFS *root, const char *full_path)
 		return HALFS_insert(*anchor, next_part);
 	return *anchor;
 }
+
+int HALFS_mode(HALFS *node)
+{
+	int mode = node->ops.mode;
+	if (node->ops.read != HALFS_default_read)
+		mode |= 0444;
+	if (node->ops.write != HALFS_default_write)
+		mode |= 0222;
+	if (node->first_child)
+		mode |= 0555;
+	return mode;
+}

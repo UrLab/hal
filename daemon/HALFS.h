@@ -33,4 +33,6 @@ HALFS *HALFS_find(HALFS *root, const char *full_path);
 HALFS *HALFS_findParent(HALFS *root, const char *full_path);
 HALFS *HALFS_insert(HALFS *root, const char *full_path);
 
+int HALFS_mode(HALFS *node);
+
 #endif

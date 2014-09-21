@@ -175,7 +175,6 @@ static void HALFS_build()
         strcat(path, hal.triggers[i].name);
         file = HALFS_insert(HALFS_root, path);
         file->backend = hal.triggers + i;
-        file->ops.mode = 0444;
         file->ops.read = trigger_read;
         file->ops.size = binary_size;
     }
@@ -185,7 +184,6 @@ static void HALFS_build()
         strcat(path, hal.sensors[i].name);
         file = HALFS_insert(HALFS_root, path);
         file->backend = hal.sensors + i;
-        file->ops.mode = 0444;
         file->ops.read = sensor_read;
         file->ops.size = sensor_size;
     }
@@ -195,7 +193,6 @@ static void HALFS_build()
         strcat(path, hal.switchs[i].name);
         file = HALFS_insert(HALFS_root, path);
         file->backend = hal.switchs + i;
-        file->ops.mode = 0666;
         file->ops.read = switch_read;
         file->ops.write = switch_write;
         file->ops.size = binary_size;
@@ -207,7 +204,6 @@ static void HALFS_build()
         strcat(path, "/frames");
         file = HALFS_insert(HALFS_root, path);
         file->backend = hal.animations + i;
-        file->ops.mode = 0222;
         file->ops.write = animation_upload;
 
         strcpy(path, "/animations/");
@@ -215,7 +211,6 @@ static void HALFS_build()
         strcat(path, "/play");
         file = HALFS_insert(HALFS_root, path);
         file->backend = hal.animations + i;
-        file->ops.mode = 0666;
         file->ops.read = anim_play_read;
         file->ops.write = anim_play_write;
         file->ops.size = binary_size;
@@ -225,7 +220,6 @@ static void HALFS_build()
         strcat(path, "/loop");
         file = HALFS_insert(HALFS_root, path);
         file->backend = hal.animations + i;
-        file->ops.mode = 0666;
         file->ops.read = anim_loop_read;
         file->ops.write = anim_loop_write;
         file->ops.size = binary_size;
@@ -235,7 +229,6 @@ static void HALFS_build()
         strcat(path, "/fps");
         file = HALFS_insert(HALFS_root, path);
         file->backend = hal.animations + i;
-        file->ops.mode = 0666;
         file->ops.read = anim_fps_read;
         file->ops.write = anim_fps_write;
         file->ops.size = anim_fps_size;
@@ -383,18 +376,20 @@ static int HALFS_getattr(const char *path, struct stat *stbuf)
     stbuf->st_uid = getuid();
     stbuf->st_gid = getgid();
 
+    stbuf->st_mode = HALFS_mode(file);
+
     if (file->first_child){
         /* has child: Directory */
-        stbuf->st_mode = S_IFDIR | 0755;
+        stbuf->st_mode |= S_IFDIR;
         stbuf->st_nlink = 2;
     } else if (file->ops.target != NULL){
         /* has target: Symlink */
-        stbuf->st_mode = S_IFLNK | file->ops.mode;
+        stbuf->st_mode |= S_IFLNK;
         stbuf->st_nlink = 1;
         stbuf->st_size = strlen(file->ops.target);
     } else {
         /* otherwise: Regular file */
-        stbuf->st_mode = S_IFREG | file->ops.mode;
+        stbuf->st_mode |= S_IFREG;
         stbuf->st_nlink = 1;
         stbuf->st_size = file->ops.size(file->backend);
     }
