@@ -133,6 +133,7 @@ int anim_fps_read(HALResource *anim, char *buffer, size_t size, off_t offset)
     pthread_cond_wait(&anim->cond, &anim->mutex);
 
     unsigned int fps = 1000/anim->data.hhu4[2];
+    printf("\033[32mFPS: %u\033[0m\n", fps);
     snprintf(buffer, size, "%hhu%n", fps, &res);
     pthread_mutex_unlock(&anim->mutex);
     return res;
@@ -223,6 +224,7 @@ static void HALFS_build()
         file->ops.mode = 0666;
         file->ops.read = anim_fps_read;
         file->ops.write = anim_fps_write;
+        file->ops.size = anim_fps_size;
     }
 }
 

@@ -74,7 +74,7 @@ class Animation : public Resource {
         unsigned char getLen() const {return _len;}
         void setLen(unsigned char len){_len = len;}
 
-        bool getDelay() const {return _delay;}
+        unsigned char getDelay() const {return _delay;}
         void setDelay(unsigned int delay){_delay = delay;}
 
         bool isLoop() const {return _loop;}
