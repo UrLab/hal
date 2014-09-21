@@ -23,16 +23,17 @@ bool HAL_init(struct HAL_t *hal, const char *arduino_dev)
     if (hal->serial_fd < 0)
         return false;
 
-    minisleep(5.0);
-
     /* Get HAL version */
-    serialport_writebyte(hal->serial_fd, '?');
-    n_try = 0;
-    do {
-        serialport_read_until(hal->serial_fd, buf, '\n', 128, 1000);
-        line = strip(buf);
-        n_try++;
-    } while (line[0] != '?' && n_try <= 20);
+    for (int k=0; k<5; k++){
+        serialport_writebyte(hal->serial_fd, '?');
+        n_try = 0;
+        do {
+            serialport_read_until(hal->serial_fd, buf, '\n', 128, 50);
+            line = strip(buf);
+            n_try++;
+        } while (line[0] != '?' && n_try <= 20);
+        if (line[0] == '?') break;
+    }
     if (line[0] != '?')
         goto fail;
 
@@ -139,6 +140,7 @@ static void HAL_socket_accept(struct HAL_t *hal)
     hal->socket_n_clients++;
 }
 
+/* Main input routine */
 void *HAL_read_thread(void *args)
 {
     char buf[128];
