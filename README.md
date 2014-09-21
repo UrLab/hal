@@ -52,3 +52,35 @@ and interacts with the Hackerspace crew.
 	|   |-- [-r--r--r--]  door_stairs
 	|   `-- [-r--r--r--]  knife
 	`-- [-r--r--r--]  version
+
+## Hal Resources
+### Switchs 
+
+Switchs are binary outputs (on/off). Just write 1 or 0 to `halfs/switchs/<name>`
+to put it on or off. You may also retrieve its actual status by reading the file.
+
+
+### Animations
+
+Animations are sequences of bytes (0, 1, ... , 254, 255), usually played on 
+ledstrips or a buzzer. You can:
+
+* Upload an animation by writing between 1 and 255 bytes to `halfs/animations/<name>/frames`
+* Set its speed by writing a number between 4 and 1000 to `halfs/animations/<name>/fps`
+* Control if it should play one time or loop continuously by writing 0 or 1 to `halfs/animations/<name>/loop`
+* Start or stop it by writing 0 or 1 to `halfs/animations/<name>/play`
+
+You may also get the fps, playing status and loop status by reading corresponding files.
+
+## Sensors
+
+Sensors are analog sensors, varying between 0 and 1 (1024 different values as float).
+Just read `halfs/sensors/<name>` to get value
+
+## Triggers
+
+Triggers are binary sensors. Just read `halfs/triggers/<name>` to get value.
+You may be also interested in trigger state change in real time, without 
+continuously reading the file. You can read the UNIX socket in `halfs/events`,
+which outputs a line every time a trigger state changes. This line has the
+following format: `<sensor_name>:<status>`, for example `bell:1` or `knife:0`.
