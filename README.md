@@ -13,6 +13,13 @@ and interacts with the Hackerspace crew.
 	
 	$ make
 
+# TODO
+
+* Actual Git version (for driver && arduino); not an arbitrary string
+* More security check (bound checking, syscall return values, ...)
+* Driver statistics
+* Incorporate buzzer
+
 # Usage
 ## Launch driver
 
