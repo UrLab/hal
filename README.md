@@ -72,12 +72,12 @@ ledstrips or a buzzer. You can:
 
 You may also get the fps, playing status and loop status by reading corresponding files.
 
-## Sensors
+### Sensors
 
 Sensors are analog sensors, varying between 0 and 1 (1024 different values as float).
 Just read `halfs/sensors/<name>` to get value
 
-## Triggers
+### Triggers
 
 Triggers are binary sensors. Just read `halfs/triggers/<name>` to get value.
 You may be also interested in trigger state change in real time, without 
