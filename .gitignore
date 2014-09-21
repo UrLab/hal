@@ -3,5 +3,4 @@ ve/
 *.pyc
 *.o
 *.log
-arduino/src/sketch.ino
 config.py
