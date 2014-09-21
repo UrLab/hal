@@ -26,4 +26,6 @@ void HAL_set_anim_loop(struct HAL_t *hal, int anim_id, bool loop);
 void HAL_ask_anim_delay(struct HAL_t *hal, int anim_id);
 void HAL_set_anim_delay(struct HAL_t *hal, int anim_id, unsigned char delay);
 
+void HAL_ask_sensor(struct HAL_t *hal, int sensor_id);
+
 #endif

@@ -136,10 +136,23 @@ int anim_fps_read(HALResource *anim, char *buffer, size_t size, off_t offset)
     printf("\033[32mFPS: %u\033[0m\n", fps);
     snprintf(buffer, size, "%hhu%n", fps, &res);
     pthread_mutex_unlock(&anim->mutex);
-    return res;
+    return res+1; //include trailing '\0'
 }
 
 int anim_fps_size(HALResource *backend){return 4;}
+
+int sensor_size(HALResource *backend){return 13;}
+
+int sensor_read(HALResource *sensor, char *buffer, size_t size, off_t offset)
+{
+    int res = 0;
+    pthread_mutex_lock(&sensor->mutex);
+    HAL_ask_sensor(&hal, sensor->id);
+    pthread_cond_wait(&sensor->cond, &sensor->mutex);
+    snprintf(buffer, size, "%f%n", sensor->data.f, &res);
+    pthread_mutex_unlock(&sensor->mutex);
+    return res+1; //include trailing '\0'
+}
 
 /*
  * Build HALFS tree structure from detected I/O
@@ -174,6 +187,8 @@ static void HALFS_build()
         file = HALFS_insert(HALFS_root, path);
         file->backend = hal.sensors + i;
         file->ops.mode = 0444;
+        file->ops.read = sensor_read;
+        file->ops.size = sensor_size;
     }
 
     for (size_t i=0; i<hal.n_switchs; i++){

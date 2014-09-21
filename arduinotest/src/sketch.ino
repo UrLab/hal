@@ -167,11 +167,23 @@ void com(){
         /* Ask for trigger status */
         case 'T':
             while (! Serial.available());
-            c = Serial.read();
+            c = Serial.read(); //trigger id
             if (c < N_TRIGGERS){
                 Serial.print("T");
                 Serial.print(c, DEC);
                 Serial.println(triggers[c].isActive() ? "1" : "0");
+            }
+            break;
+    
+        /* Ask for sensor value */
+        case 'C':
+            while (! Serial.available());
+            c = Serial.read(); //sensor id
+            if (c < N_SENSORS){
+                Serial.print("C");
+                Serial.print(c, DEC);
+                Serial.print(":");
+                Serial.println(sensors[c].getValue());
             }
             break;
     }

@@ -14,6 +14,7 @@ typedef struct HALResource_t {
         void *ptr;
         unsigned char hhu4[4];
         bool b;
+        float f;
     } data;
     pthread_mutex_t mutex;
     pthread_cond_t   cond;

@@ -167,7 +167,11 @@ void *HAL_read_thread(void *args)
         if (streq(line, "*"))
             serialport_writebyte(hal->serial_fd, '*');
 
-        /* Trigger state change or status response upon request */
+        /* 
+        * Trigger state change;
+        * Trigger state response upon request;
+        * Switch state 
+        */
         else if (cmd == 'T' || cmd == '!' || cmd == 'S'){
             HALResource *resource = NULL;
 
@@ -197,6 +201,25 @@ void *HAL_read_thread(void *args)
             }
         }
 
+        /* Sensor value */
+        else if (cmd == 'C'){
+            HALResource *sensor = NULL;
+            char *sep = strchr(line, ':');
+            *sep = '\0';
+            int id = strtol(line+1, NULL, 10);
+
+            sensor = hal->sensors+id;
+            sep++;
+
+            int val = strtol(sep, NULL, 10);
+
+            pthread_mutex_lock(&sensor->mutex);
+            sensor->data.f = ((float) val)/1023;
+            pthread_cond_broadcast(&sensor->cond);
+            pthread_mutex_unlock(&sensor->mutex);
+        }
+
+        /* Animation attributes change */
         else if (cmd == 'a'){
             HALResource *anim = NULL;
             char *sep = strchr(line, ':');
@@ -304,5 +327,11 @@ void HAL_ask_anim_delay(struct HAL_t *hal, int anim_id)
 void HAL_set_anim_delay(struct HAL_t *hal, int anim_id, unsigned char delay)
 {
     cuchar req[] = {'a', anim_id, 'd', delay};
+    say(hal, req);
+}
+
+void HAL_ask_sensor(struct HAL_t *hal, int sensor_id)
+{
+    cuchar req[] = {'C', sensor_id};
     say(hal, req);
 }

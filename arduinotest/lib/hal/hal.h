@@ -103,6 +103,7 @@ class Animation : public Resource {
 class Sensor : public Resource {
     public:
         Sensor(const char *name, int id, int pin) : Resource(name, id, pin){}
+        unsigned int getValue() const {return analogRead(pin());}
 };
 
 #endif
