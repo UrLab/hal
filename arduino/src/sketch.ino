@@ -17,7 +17,8 @@ Switch switchs[] = {
 Animation animations[] = {
     Animation("red", 0, 5),
     Animation("green", 1, 6),
-    Animation("blue", 2, 10)
+    Animation("blue", 2, 10),
+    Animation("heater", 3, 3)
 };
 
 #define N_SENSORS (sizeof(sensors)/sizeof(Sensor))
