@@ -5,5 +5,4 @@ ve/
 *.log
 *.ok
 *.test
-config.py
 driver/tests/ALL_TESTS_OK

@@ -1,0 +1,1 @@
+HALFS_ROOT = "/dev/hal"
