@@ -6,9 +6,11 @@ from config import HALFS_ROOT
 from time import sleep
 
 macs_json = urlopen("http://pamela.urlab.be/mac.json").read()
-macs = loads(macs_json)
+known_people = 0
 
-known_people = len(macs["color"])
+if macs_json:
+	macs = loads(macs_json)
+	known_people = len(macs["color"])
 
 if __name__ == "__main__" :
 	# If number of people has changed, epileptic mode for 2 seconds
