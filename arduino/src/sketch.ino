@@ -4,7 +4,8 @@
 Trigger triggers[] = {
     Trigger("door_stairs", 0, 9, LOW),
     Trigger("bell", 1, 4, HIGH),
-    Trigger("knife", 2, 11, HIGH)
+    Trigger("knife", 2, 11, HIGH),
+    Trigger("passage", 3, 12, HIGH)
 };
 
 #define N_SWITCHS (sizeof(switchs)/sizeof(Switch))
