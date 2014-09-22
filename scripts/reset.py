@@ -2,8 +2,7 @@
 
 from math import sin, pi
 from glob import glob
-
-HALFS_ROOT = "/dev/hal"
+from config import HALFS_ROOT
 
 def sinusoid(n_frames, min, max):
     assert min <= max
