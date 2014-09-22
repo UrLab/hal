@@ -11,10 +11,11 @@ known_people = 0
 if macs_json:
 	macs = loads(macs_json)
 	known_people = len(macs["color"])
+known_people = max(known_people, 1) # avoiding writing 0 to the driver
 
 if __name__ == "__main__" :
 	# If number of people has changed, epileptic mode for 2 seconds
-	if (int(open(HALFS_ROOT+"/animations/red/fps", 'r').read().strip())/10 != known_people or True):
+	if (int(open(HALFS_ROOT+"/animations/red/fps", 'r').read().strip("\0"))/10 != known_people or True):
 		open(HALFS_ROOT+"/animations/red/fps", 'w').write(str(500))
 		sleep(2)
 	open(HALFS_ROOT+"/animations/red/fps", 'w').write(str(10*known_people))
