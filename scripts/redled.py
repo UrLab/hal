@@ -9,7 +9,7 @@ macs = loads(macs_json)
 
 known_people = len(macs["color"])
 
-if __name__ = "__main__":
+if __name__ == "__main__" :
 	open(HALFS_ROOT+"/animations/red/fps", 'w').write(str(10*known_people))
 
 
