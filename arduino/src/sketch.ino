@@ -10,7 +10,7 @@ Trigger triggers[] = {
 
 #define N_SWITCHS (sizeof(switchs)/sizeof(Switch))
 Switch switchs[] = {
-    Switch("power", 0, 2),
+    Switch("power", 0, 22),
     Switch("leds_stairs", 1, 24)
 };
 
