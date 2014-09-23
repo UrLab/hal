@@ -1,5 +1,6 @@
 import numpy as np
 from struct import unpack
+from sys import stdout
 
 FPS = 25
 
@@ -24,10 +25,13 @@ while True:
     s = float(sum(fft_real))
     bass = int(255*sum(fft_real[bass_min:bass_max])/s)
     treble = int(255*sum(fft_real[treble_min:treble_max])/s)
+
+    print "\033[41m%s\033[0m%s\033[46m%s\033[0m"%(" "*(bass/8), " "*((256-bass)/8), " "*(treble/8))
+    
     #print begin, end, "BASS:", bass, "TREBLE:", treble
-    print "BASS: %3d   TREBLE: %3d" % (bass, treble)
-    open("/dev/hal/animations/red/frames", "w").write(chr(bass))
-    open("/dev/hal/animations/blue/frames", "w").write(chr(treble))
+    #print "BASS: %3d   TREBLE: %3d" % (bass, treble)
+    #open("/dev/hal/animations/red/frames", "w").write(chr(bass))
+    #open("/dev/hal/animations/blue/frames", "w").write(chr(treble))
 
     samples = fifo.read(samples_per_frame*2)
     for i in range(samples_per_frame):
