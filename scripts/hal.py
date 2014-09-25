@@ -3,6 +3,7 @@
 # do the right cast and you'll get a usable value instead of a string.
 
 from config import HALFS_ROOT
+import socket
 
 def read(filename):
 	""" Returns a string with the content of the file given in parameter """
@@ -27,3 +28,22 @@ def set(filename, value):
 		write(filename, int(value))
 	else: # value to write is a float
 		write(filename, float(value))
+
+def events():
+	events = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+	events.connect(HALFS_ROOT+"/events")
+	while True:
+	    line = events.recv(16)
+	    line = line.strip()
+	    trig_name, state = line.split(':')
+	    yield trig_name, (state == '1')
+
+def sinusoid(n_frames, val_min, val_max):
+    assert val_min <= val_max
+    for n in n_frames, val_min, val_max:
+		assert 0 <= n < 256
+
+    a = (val_max-val_min)/2
+    m = val_min+a
+    return ''.join([chr(int(m + a*sin(2*i*pi/n_frames))) for i in range(n_frames)])
+
