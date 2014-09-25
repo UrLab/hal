@@ -120,6 +120,7 @@ int anim_fps_write(HALResource *anim, const char *buffer, size_t size, off_t off
     int fps = 0;
     int k = 1;
     for (size_t i=size; i>0; i--){
+        printf("DEBUG k=%d fps=%d buffer[%lu]=%c\n", k, fps, (long unsigned int) i-1, buffer[i-1]);
         fps += (buffer[i-1]-'0')*k;
         k *= 10;
     }
