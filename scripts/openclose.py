@@ -16,7 +16,7 @@ def close_hs():
     for anim in ("red", "green", "blue", "heater", "door_green"):
         prefix = "/animations/" + anim
         hal.set(prefix + "/play", False)
-    hal.set("/switchs/leds_stairs/", True)
+    hal.set("/switchs/leds_stairs", True)
     sleep(60)
     hal.set("/switchs/leds_stairs", False)
     hal.set("/switchs/power", False)

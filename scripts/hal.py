@@ -24,6 +24,8 @@ def get(filename):
 
 def set(filename, value):
 	""" Casts value to the correct type and writes it to the file given in parameter """
+	if type(value) == bool:
+		value = int(value)
 	if read(filename).find(".") == -1: # value to write is an integer
 		write(filename, int(value))
 	else: # value to write is a float
