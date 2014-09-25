@@ -122,8 +122,8 @@ int anim_fps_write(HALResource *anim, const char *buffer, size_t size, off_t off
     for (size_t i=size; i>0; i--){
         if (strchr("\n\r\t ", buffer[i-1]))
             continue;
-        printf("DEBUG k=%d fps=%d buffer[%lu]=%c\n", k, fps, (long unsigned int) i-1, buffer[i-1]);
         fps += (buffer[i-1]-'0')*k;
+        //printf("DEBUG k=%d fps=%d buffer[%lu]=%c\n", k, fps, (long unsigned int) i-1, buffer[i-1]);
         k *= 10;
     }
     if (fps < 4)         fps = 4;
