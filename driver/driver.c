@@ -321,7 +321,7 @@ static int HALFS_write(
         res = file->ops.write(file->backend, buf, size, offset);
         printf("\033[1;35mWRITE %s[%lu/%d]: \033[0m", path, size, res);
         for (int i=0; i<res; i++)
-            printf("%02x", buf[i]);
+            printf("%02hhx", buf[i]);
         puts("");
     }
     return res;
