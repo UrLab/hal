@@ -118,10 +118,9 @@ int anim_play_read(HALResource *anim, char *buffer, size_t size, off_t offset)
 int anim_fps_write(HALResource *sw, const char *buffer, size_t size, off_t offset)
 {
     long int fps = strtol(buffer, NULL, 10);
+    if (fps < 4)         fps = 4;
+    else if (fps > 1000) fps = 1000;
     unsigned int delay = 1000/fps;
-    if (delay == 0)
-        delay = 1;
-
     pthread_mutex_lock(&sw->mutex);
     HAL_set_anim_delay(&hal, sw->id, delay);
     pthread_mutex_unlock(&sw->mutex);
