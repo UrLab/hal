@@ -69,3 +69,5 @@ def sensors():
     sensors = {}
     for sensor in glob.glob(path.join(HALFS_ROOT, "sensors", "*")):
         sensors[path.basename(sensor)] = get(sensor)
+
+    return sensors
