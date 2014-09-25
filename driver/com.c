@@ -117,7 +117,7 @@ void HAL_socket_open(struct HAL_t *hal, const char *path)
 
 void HAL_socket_write(struct HAL_t *hal, const char *msg)
 {
-    int len = (int) strlen(msg) + 1;
+    int len = (int) strlen(msg);
     for (int i=0; i<hal->socket_n_clients; i++){
         int client = hal->socket_clients[i];
         if (write(client, msg, len) != len){

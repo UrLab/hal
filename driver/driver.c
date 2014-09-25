@@ -33,7 +33,7 @@ int version_read(HALResource *backend, char * buffer, size_t size, off_t offset)
     if (offset > 40)
         return 0;
     int l = min(size, (size_t) 41-offset);
-    memcpy(buffer, hal.version, l);
+    sprintf(buffer, "%s\n", hal.version+offset);
     return l;
 }
 
@@ -42,7 +42,7 @@ int trigger_read(HALResource *trig, char *buffer, size_t size, off_t offset)
     pthread_mutex_lock(&trig->mutex);
     HAL_ask_trigger(&hal, trig->id);
     pthread_cond_wait(&trig->cond, &trig->mutex);
-    strcpy(buffer, (trig->data.b) ? "1" : "0");
+    strcpy(buffer, (trig->data.b) ? "1\n" : "0\n");
     pthread_mutex_unlock(&trig->mutex);
     return 2;
 }
@@ -54,7 +54,7 @@ int switch_read(HALResource *sw, char *buffer, size_t size, off_t offset)
     pthread_mutex_lock(&sw->mutex);
     HAL_ask_switch(&hal, sw->id);
     pthread_cond_wait(&sw->cond, &sw->mutex);
-    strcpy(buffer, sw->data.b ? "1" : "0");
+    strcpy(buffer, sw->data.b ? "1\n" : "0\n");
     pthread_mutex_unlock(&sw->mutex);
     return 2;
 }
@@ -91,7 +91,7 @@ int anim_loop_read(HALResource *anim, char *buffer, size_t size, off_t offset)
     pthread_mutex_lock(&anim->mutex);
     HAL_ask_anim_loop(&hal, anim->id);
     pthread_cond_wait(&anim->cond, &anim->mutex);
-    strcpy(buffer, (anim->data.hhu4[0]) ? "1" : "0");
+    strcpy(buffer, (anim->data.hhu4[0]) ? "1\n" : "0\n");
     pthread_mutex_unlock(&anim->mutex);
     return 2;
 }
@@ -110,7 +110,7 @@ int anim_play_read(HALResource *anim, char *buffer, size_t size, off_t offset)
     pthread_mutex_lock(&anim->mutex);
     HAL_ask_anim_play(&hal, anim->id);
     pthread_cond_wait(&anim->cond, &anim->mutex);
-    strcpy(buffer, (anim->data.hhu4[1]) ? "1" : "0");
+    strcpy(buffer, (anim->data.hhu4[1]) ? "1\n" : "0\n");
     pthread_mutex_unlock(&anim->mutex);
     return 2;
 }
@@ -134,9 +134,9 @@ int anim_fps_read(HALResource *anim, char *buffer, size_t size, off_t offset)
     HAL_ask_anim_delay(&hal, anim->id);
     pthread_cond_wait(&anim->cond, &anim->mutex);
     unsigned int fps = 1000/anim->data.hhu4[2];
-    snprintf(buffer, size, "%hhu%n", fps, &res);
+    snprintf(buffer, size, "%hhu\n%n", fps, &res);
     pthread_mutex_unlock(&anim->mutex);
-    return res+1; //include trailing '\0'
+    return res;
 }
 
 int anim_fps_size(HALResource *backend){return 4;}
@@ -149,9 +149,9 @@ int sensor_read(HALResource *sensor, char *buffer, size_t size, off_t offset)
     pthread_mutex_lock(&sensor->mutex);
     HAL_ask_sensor(&hal, sensor->id);
     pthread_cond_wait(&sensor->cond, &sensor->mutex);
-    snprintf(buffer, size, "%f%n", sensor->data.f, &res);
+    snprintf(buffer, size, "%f\n%n", sensor->data.f, &res);
     pthread_mutex_unlock(&sensor->mutex);
-    return res+1; //include trailing '\0'
+    return res;
 }
 
 /*
