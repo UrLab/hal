@@ -12,7 +12,9 @@
 #include "com.h"
 #include "utils.h"
 
-pthread_t com_thread;
+static uid_t my_uid;
+static gid_t my_gid;
+static pthread_t com_thread;
 
 /* Root of virtual file system */
 HALFS *HALFS_root = NULL;
@@ -161,6 +163,8 @@ static void HALFS_build()
     char path[128];
     HALFS_root = HALFS_create("/");
 
+    my_uid = getuid();
+    my_gid = getgid();
 
     HALFS * file = HALFS_insert(HALFS_root, "/version");
     file->ops.read = version_read;
@@ -373,8 +377,8 @@ static int HALFS_getattr(const char *path, struct stat *stbuf)
     if (! file)
         return -ENOENT;
 
-    stbuf->st_uid = getuid();
-    stbuf->st_gid = getgid();
+    stbuf->st_uid = my_uid;
+    stbuf->st_gid = my_gid;
 
     stbuf->st_mode = HALFS_mode(file);
 
