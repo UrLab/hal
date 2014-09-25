@@ -6,7 +6,7 @@ from config import HALFS_ROOT
 
 def read(filename):
 	""" Returns a string with the content of the file given in parameter """
-	return open(HALFS_ROOT + ("/" if filename[0] != "/" else "") + filename, 'r').read().strip("\0")
+	return open(HALFS_ROOT + ("/" if filename[0] != "/" else "") + filename, 'r').read().strip("\0").strip()
 
 def write(filename, value):
 	""" Casts value to str and writes it to the file given in parameter """
