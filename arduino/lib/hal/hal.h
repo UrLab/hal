@@ -6,10 +6,11 @@
 class Resource {
     private:
         const char *_name;
-        const int _id, _pin;
+        int _id, _pin;
     public:
-        explicit Resource(const char *name, int id, int pin) : _name(name), _id(id), _pin(pin) {}
+        explicit Resource(const char *name, int pin) : _name(name), _id(0), _pin(pin) {}
         const char *name() const {return _name;}
+        void setID(int id){_id = id;}
         int id() const {return _id;}
         int pin() const {return _pin;}
 };
@@ -19,30 +20,33 @@ class Resource {
 class Trigger : public Resource {
     private:
         const int _active_state; 
-        int _count_state;
+        int _count_active, _count_inactive;
     public:
-        explicit Trigger(const char *name, int id, int pin, int active_state=HIGH) : 
-            Resource(name, id, pin), _active_state(active_state), _count_state(0)
+        explicit Trigger(const char *name, int pin, int active_state=HIGH) : 
+            Resource(name, pin), _active_state(active_state), _count_active(0), 
+            _count_inactive(0)
         {
             pinMode(pin, INPUT);
         }
-        bool isActive() const {return _count_state == TRIGGER_AFTER;}
+        bool isActive() const {return _count_active == TRIGGER_AFTER;}
         void check(){hit(digitalRead(pin()));}
         void hit(int state){
-            if (state == _active_state && _count_state < TRIGGER_AFTER){
-                _count_state ++;
-                if (_count_state == TRIGGER_AFTER){
+            if (state == _active_state && _count_active < TRIGGER_AFTER){
+                _count_active ++;
+                if (_count_active == TRIGGER_AFTER){
                     Serial.print("!");
                     Serial.print(id(), DEC);
                     Serial.println("1");
+                    _count_inactive = 0;
                 }
-            } else if (state != _active_state){
-                if (_count_state == TRIGGER_AFTER){
+            } else if (state != _active_state && _count_inactive < TRIGGER_AFTER){
+                _count_inactive ++;
+                if (_count_inactive == TRIGGER_AFTER){
                     Serial.print("!");
                     Serial.print(id(), DEC);
                     Serial.println("0");
+                    _count_active = 0;
                 }
-                _count_state = 0;
             }
         }
 };
@@ -51,7 +55,7 @@ class Switch : public Resource {
     private:
         int _state;
     public:
-        explicit Switch(const char *name, int id, int pin) : Resource(name, id, pin), _state(LOW){}
+        explicit Switch(const char *name, int pin) : Resource(name, pin), _state(LOW){pinMode(pin, OUTPUT);}
         void activate(){_state = HIGH;}
         void deactivate(){_state = LOW;}
         bool isActive() const {return _state == HIGH;}
@@ -66,8 +70,8 @@ class Animation : public Resource {
         unsigned int _delay;
         unsigned long int _tlast;
     public:
-        Animation(const char *name, int id, int pin) : 
-        Resource(name, id, pin), _len(0), _loop(true), _play(true), _delay(100){
+        Animation(const char *name, int pin) : 
+        Resource(name, pin), _len(0), _loop(true), _play(true), _delay(100){
             memset(_frames, 0, sizeof(_frames));
             pinMode(pin, OUTPUT);
         }
@@ -102,7 +106,7 @@ class Animation : public Resource {
 
 class Sensor : public Resource {
     public:
-        Sensor(const char *name, int id, int pin) : Resource(name, id, pin){}
+        Sensor(const char *name, int pin) : Resource(name, pin){}
         unsigned int getValue() const {return analogRead(pin());}
 };
 

@@ -2,41 +2,48 @@
 
 #define N_TRIGGERS (sizeof(triggers)/sizeof(Trigger))
 Trigger triggers[] = {
-    Trigger("door_stairs", 0, 9, LOW),
-    Trigger("bell", 1, 4, HIGH),
-    Trigger("knife", 2, 11, HIGH),
-    Trigger("passage", 3, 12, LOW)
+    Trigger("door_stairs", 51, LOW),
+    Trigger("bell", 49, HIGH),
+    Trigger("knife_switch", 53, HIGH),
+    Trigger("passage", 12, LOW),
+    Trigger("heater", 47, LOW)
 };
 
 #define N_SWITCHS (sizeof(switchs)/sizeof(Switch))
 Switch switchs[] = {
-    Switch("power", 0, 2)
+    Switch("power", 22),
+    Switch("leds_stairs", 24)
 };
 
 #define N_ANIMATIONS (sizeof(animations)/sizeof(Animation))
 Animation animations[] = {
-    Animation("red", 0, 5),
-    Animation("green", 1, 6),
-    Animation("blue", 2, 10),
-    Animation("heater", 3, 3)
+    Animation("red", 3),
+    Animation("door_green", 5),
+    Animation("green", 4),
+    Animation("blue", 2),
+    Animation("heater", 6)
 };
 
 #define N_SENSORS (sizeof(sensors)/sizeof(Sensor))
 Sensor sensors[] = {
-    Sensor("temp_radiator", 0, 0),
-    Sensor("temp_ambiant", 1, 2),
-    Sensor("light_inside", 2, 3),
-    Sensor("light_outside", 3, 1)
+    Sensor("temp_radiator", 3),
+    Sensor("temp_ambiant", 1),
+    Sensor("light_inside", 0),
+    Sensor("light_outside", 2)
 };
 
 void setup(){
-    unsigned char n = 50;
+    for (int i=0; i<30; i++){
+        if (i<N_ANIMATIONS) animations[i].setID(i);
+        if (i<N_SENSORS) sensors[i].setID(i);
+        if (i<N_TRIGGERS) triggers[i].setID(i);
+        if (i<N_SWITCHS) switchs[i].setID(i);
+    }
 
     Serial.begin(115200);
     for (int i=0; i<N_ANIMATIONS; i++){
-        animations[i].setLen(n);
-        for (int j=0; j<n; j++)
-            animations[i][j] = j;
+        animations[i].setLen(1);
+        animations[i][0] = 128;
     }
 }
 
@@ -46,7 +53,7 @@ unsigned char c, d, e;
 
 void com(){
     c = Serial.read();
-    
+
     switch (c){
         /* Ping */
         case '*':
@@ -112,7 +119,7 @@ void com(){
             c = Serial.read(); //anim id
             while (! Serial.available());
             d = Serial.read(); //number of frames
-            
+
             for (j=0; j<d; j++){
                 while (! Serial.available());
                 e = Serial.read();
@@ -176,7 +183,7 @@ void com(){
                 Serial.println(triggers[c].isActive() ? "1" : "0");
             }
             break;
-    
+
         /* Ask for sensor value */
         case 'C':
             while (! Serial.available());

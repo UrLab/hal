@@ -1,5 +1,5 @@
 VERSION = `git rev-parse HEAD`
-MODEL=uno
+MODEL=mega2560
 CXXFLAGS=-std=c++11 -pedantic -Wall -Wextra -Wno-unused-parameters
 
 .PHONY: build clean all

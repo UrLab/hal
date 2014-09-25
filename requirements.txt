@@ -1,5 +1,4 @@
 ino
-pyserial
-ipython
-puka
-logbook
+ipython[notebook]
+numpy
+matplotlib
