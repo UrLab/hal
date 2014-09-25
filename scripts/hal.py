@@ -2,6 +2,7 @@
 # Use the functions get() and set() to access driver values. These two functions 
 # do the right cast and you'll get a usable value instead of a string.
 
+from math import sin, pi
 from config import HALFS_ROOT
 import socket
 
