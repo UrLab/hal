@@ -2,44 +2,48 @@
 
 #define N_TRIGGERS (sizeof(triggers)/sizeof(Trigger))
 Trigger triggers[] = {
-    Trigger("door_stairs", 0, 51, LOW),
-    Trigger("bell", 1, 49, HIGH),
-    Trigger("knife_switch", 2, 53, HIGH),
-    Trigger("passage", 3, 12, LOW),
-    Trigger("heater", 4, 47, LOW)
+    Trigger("door_stairs", 51, LOW),
+    Trigger("bell", 49, HIGH),
+    Trigger("knife_switch", 53, HIGH),
+    Trigger("passage", 12, LOW),
+    Trigger("heater", 47, LOW)
 };
 
 #define N_SWITCHS (sizeof(switchs)/sizeof(Switch))
 Switch switchs[] = {
-    Switch("power", 0, 22),
-    Switch("leds_stairs", 1, 24)
+    Switch("power", 22),
+    Switch("leds_stairs", 24)
 };
 
 #define N_ANIMATIONS (sizeof(animations)/sizeof(Animation))
 Animation animations[] = {
-    Animation("red", 0, 3),
-    Animation("door_green", 1, 5),
-    Animation("green", 2, 4),
-    Animation("blue", 3, 2),
-    Animation("heater", 4, 6)
+    Animation("red", 3),
+    Animation("door_green", 5),
+    Animation("green", 4),
+    Animation("blue", 2),
+    Animation("heater", 6)
 };
 
 #define N_SENSORS (sizeof(sensors)/sizeof(Sensor))
 Sensor sensors[] = {
-    Sensor("temp_radiator", 0, 3),
-    Sensor("temp_ambiant", 1, 1),
-    Sensor("light_inside", 2, 0),
-    Sensor("light_outside", 3, 2)
+    Sensor("temp_radiator", 3),
+    Sensor("temp_ambiant", 1),
+    Sensor("light_inside", 0),
+    Sensor("light_outside", 2)
 };
 
 void setup(){
-    unsigned char n = 50;
+    for (int i=0; i<30; i++){
+        if (i<N_ANIMATIONS) animations[i].setID(i);
+        if (i<N_SENSORS) sensors[i].setID(i);
+        if (i<N_TRIGGERS) triggers[i].setID(i);
+        if (i<N_SWITCHS) switchs[i].setID(i);
+    }
 
     Serial.begin(115200);
     for (int i=0; i<N_ANIMATIONS; i++){
-        animations[i].setLen(n);
-        for (int j=0; j<n; j++)
-            animations[i][j] = j;
+        animations[i].setLen(1);
+        animations[i][0] = 128;
     }
 }
 
