@@ -8,6 +8,7 @@
 #include <sys/un.h>
 #include <sys/select.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 
 bool HAL_init(struct HAL_t *hal, const char *arduino_dev)
 {
@@ -111,6 +112,7 @@ void HAL_socket_open(struct HAL_t *hal, const char *path)
     len = strlen(sock_desc.sun_path) + sizeof(sock_desc.sun_family);
     bind(hal->socket_fd, (struct sockaddr *)&sock_desc, len);
     listen(hal->socket_fd, HAL_SOCK_MAXCLIENTS);
+    chmod(sock_desc.sun_path, 0777);
 }
 
 void HAL_socket_write(struct HAL_t *hal, const char *msg)
