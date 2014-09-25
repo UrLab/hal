@@ -37,6 +37,9 @@ def close_hs():
     hal.set("/switchs/power", False)
 
 if __name__ == "__main__":
+    if hal.get("/triggers/knife_switch"):
+        open_hs()
+
     for trigger_name, state in hal.events():
         if trigger_name != 'knife_switch':
             continue
