@@ -51,7 +51,7 @@ class Switch : public Resource {
     private:
         int _state;
     public:
-        explicit Switch(const char *name, int id, int pin) : Resource(name, id, pin), _state(LOW){}
+        explicit Switch(const char *name, int id, int pin) : Resource(name, id, pin), _state(LOW){pinMode(pin, OUTPUT);}
         void activate(){_state = HIGH;}
         void deactivate(){_state = LOW;}
         bool isActive() const {return _state == HIGH;}
