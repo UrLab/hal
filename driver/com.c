@@ -247,6 +247,17 @@ void *HAL_read_thread(void *args)
             pthread_cond_broadcast(&(anim->cond));
             pthread_mutex_unlock(&(anim->mutex));
         }
+
+        else if (cmd == 'A'){
+            HALResource *anim = NULL;
+            char *sep = strchr(line, ':');
+            *sep = '\0';
+            int id = strtol(line+1, NULL, 10);
+            anim = hal->animations+id;
+            pthread_mutex_lock(&(anim->mutex));
+            pthread_cond_broadcast(&(anim->cond));
+            pthread_mutex_unlock(&(anim->mutex));
+        }
     }
     return NULL;
 }

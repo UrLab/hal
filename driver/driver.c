@@ -64,6 +64,7 @@ int switch_write(HALResource *sw, const char *buffer, size_t size, off_t offset)
     bool on = buffer[0] != '0';
     pthread_mutex_lock(&sw->mutex);
     HAL_set_switch(&hal, sw->id, on);
+    pthread_cond_wait(&sw->cond, &sw->mutex);
     pthread_mutex_unlock(&sw->mutex);
     return size;
 }
@@ -73,16 +74,18 @@ int animation_upload(HALResource *anim, const char *buffer, size_t size, off_t o
     unsigned char s = size&0xff;
     pthread_mutex_lock(&anim->mutex);
     HAL_upload_anim(&hal, anim->id, s, (const unsigned char*) buffer);
+    pthread_cond_wait(&anim->cond, &anim->mutex);
     pthread_mutex_unlock(&anim->mutex);
     return s;
 }
 
-int anim_loop_write(HALResource *sw, const char *buffer, size_t size, off_t offset)
+int anim_loop_write(HALResource *anim, const char *buffer, size_t size, off_t offset)
 {
     bool loop = buffer[0] != '0';
-    pthread_mutex_lock(&sw->mutex);
-    HAL_set_anim_loop(&hal, sw->id, loop);
-    pthread_mutex_unlock(&sw->mutex);
+    pthread_mutex_lock(&anim->mutex);
+    HAL_set_anim_loop(&hal, anim->id, loop);
+    pthread_cond_wait(&anim->cond, &anim->mutex);
+    pthread_mutex_unlock(&anim->mutex);
     return size;
 }
 
@@ -96,12 +99,13 @@ int anim_loop_read(HALResource *anim, char *buffer, size_t size, off_t offset)
     return 2;
 }
 
-int anim_play_write(HALResource *sw, const char *buffer, size_t size, off_t offset)
+int anim_play_write(HALResource *anim, const char *buffer, size_t size, off_t offset)
 {
     bool play = buffer[0] != '0';
-    pthread_mutex_lock(&sw->mutex);
-    HAL_set_anim_play(&hal, sw->id, play);
-    pthread_mutex_unlock(&sw->mutex);
+    pthread_mutex_lock(&anim->mutex);
+    HAL_set_anim_play(&hal, anim->id, play);
+    pthread_cond_wait(&anim->cond, &anim->mutex);
+    pthread_mutex_unlock(&anim->mutex);
     return size;
 }
 
@@ -131,6 +135,7 @@ int anim_fps_write(HALResource *anim, const char *buffer, size_t size, off_t off
     unsigned int delay = 1000/fps;
     pthread_mutex_lock(&anim->mutex);
     HAL_set_anim_delay(&hal, anim->id, delay);
+    pthread_cond_wait(&anim->cond, &anim->mutex);
     pthread_mutex_unlock(&anim->mutex);
     return size;
 }
