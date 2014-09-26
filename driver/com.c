@@ -277,7 +277,7 @@ static inline void HAL_say(struct HAL_t *hal, size_t len, cuchar *bytes)
             printf("<%02hhx>", bytes[i]);            
         for (j=0; j<5; j++){
             if (serialport_writebyte(hal->serial_fd, bytes[i]) != 0)
-                minisleep(0.0001);
+                minisleep(0.001);
             else break;
         }
         if (j == 5)
