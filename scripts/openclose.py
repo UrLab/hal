@@ -1,31 +1,19 @@
 import hal
 from time import sleep
-import logging
-import sys
 
-log = logging.getLogger(__name__)
-
-log.setLevel(logging.DEBUG)
-
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-log.addHandler(ch)
-
+log = hal.getLogger(__name__)
 
 def open_hs():
     log.info("OPEN the hackerspace")
     for anim in ("red", "green", "blue"):
-        prefix = "animations/" + anim
-        hal.set(prefix + "/loop", True)
-        hal.set(prefix + "/play", True)
-        hal.set(prefix + "/fps", 50)
-        hal.write(prefix + "/frames", hal.sinusoid(250, 0, 200))
+        hal.upload(anim, hal.sinusoid(250, 0, 200))
+        hal.loop(anim)
+        hal.play(anim)
+        hal.fps(anim, 50)
         sleep(0.0001)
 
-    hal.set("switchs/power", True)
-    hal.set("switchs/leds_stairs", True)
+    hal.on("power")
+    hal.on("leds_stairs")
 
 
 def close_hs():
@@ -33,22 +21,22 @@ def close_hs():
 
     # Shotdown all leds
     for anim in ("red", "green", "blue", "heater", "door_green"):
-        prefix = "animations/" + anim
-        hal.set(prefix + "/play", False)
+        hal.stop(anim)
 
     # Fix green light and stairs leds for 1 minute
-    hal.write("animations/green/frames", chr(255))
-    hal.set("animations/green/play", True)
-    hal.set("switchs/leds_stairs", True)
+    hal.upload("green", chr(255))
+    hal.play("green")
+    hal.on("leds_stairs")
     sleep(60)
 
     # Shut down everything
-    hal.set("animations/green/play", False)
-    hal.set("switchs/leds_stairs", False)
-    hal.set("switchs/power", False)
+    hal.stop("green", False)
+    hal.off("leds_stairs", False)
+    hal.off("power", False)
 
-if __name__ == "__main__":
-    if hal.get("triggers/knife_switch"):
+
+def main():
+    if hal.trig("knife_switch"):
         open_hs()
 
     for trigger_name, state in hal.events():
@@ -59,3 +47,7 @@ if __name__ == "__main__":
             open_hs()
         else:
             close_hs()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,24 +1,39 @@
 #!/usr/bin/python
 
+import hal
+from math import log
 from urllib2 import urlopen
 from json import loads
-from config import HALFS_ROOT
 from time import sleep
 
-macs_json = urlopen("http://pamela.urlab.be/mac.json").read()
-known_people = 0
+logger = hal.getLogger(__name__)
 
-if macs_json:
-	macs = loads(macs_json)
-	known_people = len(macs["color"])
-known_people = max(known_people, 1) # avoiding writing 0 to the driver
-
-if __name__ == "__main__" :
-	# If number of people has changed, epileptic mode for 2 seconds
-	if (int(open(HALFS_ROOT+"/animations/red/fps", 'r').read().strip("\0"))/10 != known_people or True):
-		open(HALFS_ROOT+"/animations/red/fps", 'w').write(str(500))
-		sleep(2)
-	open(HALFS_ROOT+"/animations/red/fps", 'w').write(str(10*known_people))
+def n_people():
+    macs_json = None
+    try:
+        urlopen("http://pamela.urlab.be/mac.json").read()
+    except:
+        pass
+    if macs_json:
+        macs = loads(macs_json)
+        return len(macs["color"]) + len(macs["grey"])
+    return 0
 
 
+def main():
+    hal.upload("red", hal.sinusoid(val_max=0.75))
+    hal.loop("red")
+    hal.play("red")
+    last_fps = -1
+    while True:
+        n = n_people()
+        fps = 25*log(2+n)
+        if fps != last_fps:
+            hal.fps("red", fps)
+            logger.info("Set red ledstrip to %d FPS (%d people)" % (fps, n))
+            last_fps = fps
+        sleep(10)
 
+
+if __name__ == "__main__":
+    main()
