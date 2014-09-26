@@ -1,7 +1,7 @@
 ALL_TESTS_OK: test_HALFS.ok
 	touch $@
 
-include ../Makefile
+include ../Makefile.flags
 
 %.ok: %.test
 	./$< && touch $@

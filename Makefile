@@ -4,16 +4,20 @@ ifeq ($(MODEL),)
 endif
 CXXFLAGS=-std=c++11 -pedantic -Wall -Wextra -Wno-unused-parameters
 
-.PHONY: build clean all
+.PHONY: build clean all driver
 
-all: upload.ok driver/driver driver/tests/ALL_TESTS_OK
+all: upload.ok driver
 build: arduino/.build/uno/firmware.hex
 
-driver/driver:
-	make -C driver driver
+version.h: .git
+	@echo "#indef DEFINE_VERSION_HEADER\n#define DEFINE_VERSION_HEADER" > $@
+	@echo "#define VERSION \"$$(git log | head -1 | cut -d ' ' -f 2)\"" >> $@
+	@echo "#define ARDUINO_VERSION \"$$(git log arduino | head -1 | cut -d ' ' -f 2)\"" >> $@
+	@echo "#define DRIVER_VERSION \"$$(git log driver | head -1 | cut -d ' ' -f 2)\"" >> $@
+	@echo "#endif" >> $@
 
-driver/tests/ALL_TESTS_OK: driver/
-	make -C driver/tests
+driver:
+	+make -C driver
 
 arduino/.build/uno/firmware.hex: arduino/src/sketch.ino
 	cd arduino && ino build -m=$(MODEL) && cd ..
