@@ -82,9 +82,12 @@ bool HAL_init(struct HAL_t *hal, const char *arduino_dev)
             line = strip(buf);
             if (line[0] != '$')
                 goto fail;
-            HALResource_init(resptr+i, line+1, type, i);
+            HALResource_init(resptr+i, line+1, type, i, hal);
         }
     }
+
+    pthread_mutex_init(&hal->mutex, NULL);
+    pthread_cond_init(&hal->cond, NULL);
 
     hal->ready = true;
     return true;
@@ -189,13 +192,13 @@ void *HAL_read_thread(void *args)
                 case 'S': resource = hal->switchs+i; break;
             }
 
-            pthread_mutex_lock(&(resource->mutex));
+            pthread_mutex_lock(&(resource->hal->mutex));
             /* Update value */
             resource->data.b = (bool) val;
 
             /* Notify potential readers that the value is available */
-            pthread_cond_broadcast(&(resource->cond));
-            pthread_mutex_unlock(&(resource->mutex));
+            pthread_cond_broadcast(&(resource->hal->cond));
+            pthread_mutex_unlock(&(resource->hal->mutex));
 
             /* If state change, also write to socket */
             if (cmd == '!'){
@@ -217,10 +220,10 @@ void *HAL_read_thread(void *args)
 
             int val = strtol(sep, NULL, 10);
 
-            pthread_mutex_lock(&sensor->mutex);
+            pthread_mutex_lock(&sensor->hal->mutex);
             sensor->data.f = ((float) val)/1023;
-            pthread_cond_broadcast(&sensor->cond);
-            pthread_mutex_unlock(&sensor->mutex);
+            pthread_cond_broadcast(&sensor->hal->cond);
+            pthread_mutex_unlock(&sensor->hal->mutex);
         }
 
         /* Animation attributes change */
@@ -233,7 +236,7 @@ void *HAL_read_thread(void *args)
             anim = hal->animations+id;
             sep++;
 
-            pthread_mutex_lock(&(anim->mutex));
+            pthread_mutex_lock(&(anim->hal->mutex));
             /* Update value */
             switch (*sep){
                 case 'l': anim->data.hhu4[0] = (sep[1] == '1'); break;
@@ -244,8 +247,8 @@ void *HAL_read_thread(void *args)
             }
 
             /* Notify potential readers that the value is available */
-            pthread_cond_broadcast(&(anim->cond));
-            pthread_mutex_unlock(&(anim->mutex));
+            pthread_cond_broadcast(&(anim->hal->cond));
+            pthread_mutex_unlock(&(anim->hal->mutex));
         }
 
         else if (cmd == 'A'){
@@ -254,9 +257,9 @@ void *HAL_read_thread(void *args)
             *sep = '\0';
             int id = strtol(line+1, NULL, 10);
             anim = hal->animations+id;
-            pthread_mutex_lock(&(anim->mutex));
-            pthread_cond_broadcast(&(anim->cond));
-            pthread_mutex_unlock(&(anim->mutex));
+            pthread_mutex_lock(&(anim->hal->mutex));
+            pthread_cond_broadcast(&(anim->hal->cond));
+            pthread_mutex_unlock(&(anim->hal->mutex));
         }
     }
     return NULL;

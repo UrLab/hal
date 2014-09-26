@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct HAL_t HAL_t;
+
 /* Any of HAL components */
 typedef struct HALResource_t {
     char *name;
@@ -16,8 +18,7 @@ typedef struct HALResource_t {
         bool b;
         float f;
     } data;
-    pthread_mutex_t mutex;
-    pthread_cond_t   cond;
+    HAL_t *hal;
 } HALResource;
 
 #define HAL_SOCK_MAXCLIENTS 32
@@ -28,6 +29,8 @@ struct HAL_t {
     int socket_n_clients;
     int socket_clients[HAL_SOCK_MAXCLIENTS];
 
+    pthread_mutex_t mutex;
+    pthread_cond_t   cond;
     char version[41];
     bool ready;
 
@@ -48,20 +51,17 @@ struct HAL_t {
     HALResource *animations;
 };
 
-static inline HALResource *HALResource_init(HALResource *res, const char *name, char type, char id)
+static inline HALResource *HALResource_init(HALResource *res, const char *name, char type, char id, HAL_t *hal)
 {
     res->name = strdup(name);
     res->type = type;
     res->id = id;
-    pthread_mutex_init(&res->mutex, NULL);
-    pthread_cond_init(&res->cond, NULL);
+    res->hal = hal;
     return res;
 }
 
 static inline void HALResource_destroy(HALResource *res)
 {
-    pthread_cond_destroy(&res->cond);
-    pthread_mutex_destroy(&res->mutex);
     free(res->name);
     memset(res, 0, sizeof(HALResource));
 }
