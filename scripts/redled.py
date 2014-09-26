@@ -27,6 +27,7 @@ def main():
     last_fps = -1
     while True:
         n = n_people()
+        logger.debug("%d people"%(n))
         fps = 25*log(2+n)
         if fps != last_fps:
             hal.fps("red", fps)

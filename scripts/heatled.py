@@ -14,7 +14,7 @@ def main():
         if last_temp != temp:
             hal.upload("heater", hal.sinusoid(val_max=temp, n_frames=100))
             last_temp = temp
-            logger.info("Uploading new sinusoi for value %f" % (temp))
+            logger.info("Uploading new heater sinusoid for value %f" % (temp))
         sleep(10)
 
 
