@@ -212,7 +212,7 @@ void loop(){
     }
 
     /* Power supply off if no communication within last 1.5s */
-    if (now - last_com > 1500)
+    if (now - last_com > 2500)
         power.deactivate();
 
     if (Serial.available())

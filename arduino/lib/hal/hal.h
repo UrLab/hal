@@ -15,7 +15,7 @@ class Resource {
         int pin() const {return _pin;}
 };
 
-#define TRIGGER_AFTER 250
+#define TRIGGER_AFTER 1000
 
 class Trigger : public Resource {
     private:
