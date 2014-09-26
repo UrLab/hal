@@ -1,4 +1,5 @@
 import hal
+from light_stairs import illuminate_stairs
 from time import sleep
 
 log = hal.getLogger(__name__)
@@ -22,17 +23,8 @@ def close_hs():
     # Shotdown all leds
     for anim in ("red", "green", "blue", "heater", "door_green"):
         hal.stop(anim)
-
-    # Fix green light and stairs leds for 1 minute
-    hal.upload("green", chr(255))
-    hal.play("green")
-    hal.on("leds_stairs")
-    sleep(60)
-
-    # Shut down everything
-    hal.stop("green")
-    hal.off("leds_stairs")
-    hal.off("power")
+    
+    illuminate_stairs()
 
 
 def main():
