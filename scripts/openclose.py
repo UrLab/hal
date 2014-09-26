@@ -30,9 +30,9 @@ def close_hs():
     sleep(60)
 
     # Shut down everything
-    hal.stop("green", False)
-    hal.off("leds_stairs", False)
-    hal.off("power", False)
+    hal.stop("green")
+    hal.off("leds_stairs")
+    hal.off("power")
 
 
 def main():
