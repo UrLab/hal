@@ -3,6 +3,7 @@
 import hal
 from time import sleep
 
+logger = hal.getLogger(__name__)
 
 def main():
     last_temp = -1
@@ -13,6 +14,7 @@ def main():
         if last_temp != temp:
             hal.upload("heater", hal.sinusoid(val_max=temp, n_frames=100))
             last_temp = temp
+            logger.info("Uploading new sinusoi for value %f" % (temp))
         sleep(10)
 
 
