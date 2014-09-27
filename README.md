@@ -1,50 +1,96 @@
-HAL (Heuristically programmed ALgorithmic computer) is a sentient computer (or artificial intelligence) that controls the systems of the UrLab spacecraft and interacts with the Hackerspace crew.
+HAL (Heuristically programmed ALgorithmic computer) is a sentient computer 
+(or artificial intelligence) that controls the systems of the UrLab spacecraft 
+and interacts with the Hackerspace crew.
 
 # Setup
 
-	$ sudo apt-get install arduino-core
+	$ sudo apt-get install arduino-core libfuse-dev
 	$ virtualenv --distribute --no-site-packages ve
 	$ source ve/bin/activate
 	$ pip install -r requirements.txt
 
-# Compile & upload Arduino code
+# Compile driver & upload Arduino code
 	
 	$ make
 
-# Communication avec l'Ambianceduino
-	
-	$ python daemon.py
+# TODO
 
-## Interactive
-	
-	$ python
-	>>> from ambianceduino import Ambianceduino
-	>>> a = Ambianceduino()
-	>>> a.run()  #Démarre le thread de lecture
-	>>> a.analogs() #Demande les valeurs des entrées analogiques à l'Ambianceduino
-	>>> a.stop() #Ferme le thread de communication
+* Actual Git version (for driver && arduino); not an arbitrary string
+* More security check (bound checking, syscall return values, ...)
+* Driver statistics
+* Incorporate buzzer
 
-# Programming Ambianceduino
-La communication bidirectionnelle avec l'Ambianceduino se fait de manière asynchrone. On envoie des messages à l'arduino en utilisant les méthodes de l'objet Ambianceduino dans le thread principal. 
+# Usage
+## Launch driver
 
-## Envoi de messages
-Les méthodes d'envoi de message sont actuellement:
+	$ mkdir halfs
+	$ driver/driver halfs
 
-* on() et off() pour allumer ou éteindre l'alimentation de puissance
-* delay(n) pour mettre la vitesse de l'animation des leds à 1000/n FPS. Appelée sans argument, demande seulement la valeur du délai actuel.
-* analogs() pour demander l'état des entrées analogiques
-* upload_anim(animation) envoie l'animation des LEDs à jouer. Une animation est constituée de 1 à 255 nombres de 8 bits non signés (de 0 à 255). La fonction attend une séquence d'entiers comme paramètre.
+## Access HAL resources
 
-## Réception de messages
+	$ tree -p halfs/
+	halfs/
+	|-- [dr-xr-xr-x]  animations
+	|   |-- [dr-xr-xr-x]  blue
+	|   |   |-- [-rw-rw-rw-]  fps
+	|   |   |-- [--w--w--w-]  frames
+	|   |   |-- [-rw-rw-rw-]  loop
+	|   |   `-- [-rw-rw-rw-]  play
+	|   |-- [dr-xr-xr-x]  green
+	|   |   |-- [-rw-rw-rw-]  fps
+	|   |   |-- [--w--w--w-]  frames
+	|   |   |-- [-rw-rw-rw-]  loop
+	|   |   `-- [-rw-rw-rw-]  play
+	|   `-- [dr-xr-xr-x]  red
+	|       |-- [-rw-rw-rw-]  fps
+	|       |-- [--w--w--w-]  frames
+	|       |-- [-rw-rw-rw-]  loop
+	|       `-- [-rw-rw-rw-]  play
+	|-- [lr--r--r--]  events -> /tmp/hal.sock
+	|-- [dr-xr-xr-x]  sensors
+	|   |-- [-r--r--r--]  light_inside
+	|   |-- [-r--r--r--]  light_outside
+	|   |-- [-r--r--r--]  temp_ambiant
+	|   `-- [-r--r--r--]  temp_radiator
+	|-- [dr-xr-xr-x]  switchs
+	|   `-- [-rw-rw-rw-]  power
+	|-- [dr-xr-xr-x]  triggers
+	|   |-- [-r--r--r--]  bell
+	|   |-- [-r--r--r--]  door_stairs
+	|   `-- [-r--r--r--]  knife
+	`-- [-r--r--r--]  version
 
-Les messages sont récupérés dans un thread séparé. Pour lancer le thread de lecture, il faut appeler la methode run() d'un AmbianceduinoReader. Pour l'arrêter, il faut utiliser la méthode stop().
+	$ cat /dev/hal/version
+	0123456789abcdef0123456789abcdef01234567
 
-Pour récupérer les informations envoyées par l'ambianceduino, il faut utiliser les callbacks de la classe AmbianceduinoReader. Ces callbacks sont toutes les méthodes dont le nom commence par when_. Ceux-ci sont:
- * when_on(), when_off() appelées lorsque l'arduino confirme qu'il a allumé ou éteint l'alimentation de puissance
- * when_delay(n) appelé lorsque l'arduino envoie le délai actuel de l'animation des leds
- * when_anim(n) appelée lorsqu'une animation de leds a bien été reçue par l'arduino (paramètre: longueur de  l'animation reçue)
- * when_bell() appelée lorsque la sonnette est pressée
- * when_door() appelée lorsque la porte des escaliers est ouverte
- * when_radiator() appelée lorsque la vanne du radiateur est ouverte et que l'alimentation est éteinte (le radiateur est allumé mais le hackerspace est fermé)
- * when_analogs(v) appelée lorsque les valeurs des entrées analogiques sont envoyées (paramètre: dictionnaire des entrées analogiques)
- * when_error(m) appelée lorsqu'un message d'erreur est reçu (paramètre: message)
+## Hal Resources
+### Switchs 
+
+Switchs are binary outputs (on/off). Just write 1 or 0 to `halfs/switchs/<name>`
+to put it on or off. You may also retrieve its actual status by reading the file.
+
+
+### Animations
+
+Animations are sequences of bytes (0, 1, ... , 254, 255), usually played on 
+ledstrips or a buzzer. You can:
+
+* Upload an animation by writing between 1 and 255 bytes to `halfs/animations/<name>/frames`
+* Set its speed by writing a number between 4 and 1000 to `halfs/animations/<name>/fps`
+* Control if it should play one time or loop continuously by writing 0 or 1 to `halfs/animations/<name>/loop`
+* Start or stop it by writing 0 or 1 to `halfs/animations/<name>/play`
+
+You may also get the fps, playing status and loop status by reading corresponding files.
+
+### Sensors
+
+Sensors are analog sensors, varying between 0 and 1 (1024 different values as float).
+Just read `halfs/sensors/<name>` to get value
+
+### Triggers
+
+Triggers are binary sensors. Just read `halfs/triggers/<name>` to get value.
+You may be also interested in trigger state change in real time, without 
+continuously reading the file. You can read the UNIX socket in `halfs/events`,
+which outputs a line every time a trigger state changes. This line has the
+following format: `<sensor_name>:<status>`, for example `bell:1` or `knife:0`.

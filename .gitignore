@@ -3,5 +3,6 @@ ve/
 *.pyc
 *.o
 *.log
-arduino/src/sketch.ino
-config.py
+*.ok
+*.test
+driver/tests/ALL_TESTS_OK

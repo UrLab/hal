@@ -1,60 +1,45 @@
-"""
-Ensure the following lines are in /etc/mpd.conf:
+import numpy as np
+from struct import unpack
+from sys import stdout
 
-audio_output {
-    type    "fifo"
-    name    "Visualizer"
-    path    "/tmp/mpd.fifo"
-    format  "44100:16:1"
-}
+FPS = 25
 
-"""
+bass_min, bass_max = 30, 240
+treble_min, treble_max = 1000, 8000
+n_samples = 44100
 
-import numpy
-from ambianceduino import Ambianceduino
-import traceback
-from math import log
 
-AUDIO_SAMPLE_RATE = 44100
-LEDS_FPS = 12
-FRAMES_PER_PACK = 1
-SAMPLES_PER_FRAME = AUDIO_SAMPLE_RATE/LEDS_FPS
-SAMPLES_PER_PACK = SAMPLES_PER_FRAME*FRAMES_PER_PACK
+N = n_samples/2
+samples_per_frame = n_samples/FPS
 
-SAMPLES_PER_FRAME = AUDIO_SAMPLE_RATE/LEDS_FPS
-FRAMES_PER_PACK = 5
+signal = np.zeros(n_samples*2)
+fifo = open("/tmp/mpd.fifo")
+samples = fifo.read(n_samples*2)
+for i in range(n_samples):
+    signal[i] = float(unpack('h', samples[2*i:2*i+2])[0])/2**15
 
-a = Ambianceduino()
-a.run()
-a.on()
-a.delay(1000/LEDS_FPS)
-print "Got Ambianceduino"
+begin, end = 0, n_samples
+while True:
+    fft = np.fft.fft(signal[begin:end])/N
+    fft_real = abs(fft)[:N] #Only positives
+    s = float(sum(fft_real))
+    bass = int(255*sum(fft_real[bass_min:bass_max])/s)
+    treble = int(255*sum(fft_real[treble_min:treble_max])/s)
 
-latency = 1000/(LEDS_FPS/FRAMES_PER_PACK)
-print "FPS:", LEDS_FPS, "Latency:", latency, "ms"
+    print "\033[41m%s\033[0m%s\033[46m%s\033[0m"%(" "*(bass/8), " "*((256-bass)/8), " "*(treble/8))
+    
+    #print begin, end, "BASS:", bass, "TREBLE:", treble
+    #print "BASS: %3d   TREBLE: %3d" % (bass, treble)
+    #open("/dev/hal/animations/red/frames", "w").write(chr(bass))
+    #open("/dev/hal/animations/blue/frames", "w").write(chr(treble))
 
-try:
-    N = 25
-    pack_min, pack_max = 255, 0
-    with open("/tmp/mpd.fifo", "rb") as sound:
-        samples = numpy.zeros(SAMPLES_PER_FRAME)
-        pack_r = [0 for i in range(FRAMES_PER_PACK)]
-        pack_b = [0 for i in range(FRAMES_PER_PACK)]
-        while True:
-            for j in range(FRAMES_PER_PACK):
-                for i in range(SAMPLES_PER_FRAME):
-                    samples.append(getMsbFromAudio(sound)**2)
-                #En = sqrt(sum(samples)/len(samples))
-                Ek = sqrt(sum(samples[-N:])/N)
-                #r = Ek/(En+1)
-                pack[j] = 2*int(Ek) #min(int(En**r), 0xff)
-            a.upload_anim('B', pack)
-            if pack[-1] < pack_min:
-                pack_min = pack[-1]
-            elif pack[-1] > pack_max:
-                pack_max = pack[-1]
-            print pack_min, pack[-1], pack_max
-except:
-    traceback.print_exc()
-    a.off()
-    a.stop()
+    samples = fifo.read(samples_per_frame*2)
+    for i in range(samples_per_frame):
+        signal[begin+i] = float(unpack('h', samples[2*i:2*i+2])[0])/2**15
+        signal[end+i]
+
+    begin += samples_per_frame
+    end += samples_per_frame
+    if end >= 2*n_samples:
+        begin = 0
+        end = n_samples
