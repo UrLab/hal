@@ -12,7 +12,8 @@ Trigger triggers[] = {
 #define N_SWITCHS (sizeof(switchs)/sizeof(Switch))
 Switch switchs[] = {
     Switch("power", 22),
-    Switch("leds_stairs", 24)
+    Switch("leds_stairs", 24),
+    Switch("ampli", 26)
 };
 
 #define N_ANIMATIONS (sizeof(animations)/sizeof(Animation))
@@ -21,7 +22,8 @@ Animation animations[] = {
     Animation("door_green", 5),
     Animation("green", 4),
     Animation("blue", 2),
-    Animation("heater", 6)
+    Animation("heater", 6),
+    Animation("kitchen", 7)
 };
 
 #define N_SENSORS (sizeof(sensors)/sizeof(Sensor))
