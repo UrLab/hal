@@ -8,7 +8,7 @@ import socket
 import glob
 from os import path
 import logging
-from sys import stdout
+from sys import stdout, argv
 
 def expand_path(filename):
     if filename.startswith(HALFS_ROOT):
@@ -37,9 +37,10 @@ def get(filename):
 
 
 ############ HIGH LEVEL API ############
-def getLogger(*args, **kwargs):
+def getLogger(name=''):
     """Return a logger suitable for HAL scripts"""
-    log = logging.getLogger(*args, **kwargs)
+    progname = path.basename(argv[0]).replace('.py', '')
+    log = logging.getLogger(progname + '.' + name)
     log.setLevel(logging.DEBUG)
     ch = logging.StreamHandler(stdout)
     ch.setLevel(logging.DEBUG)
