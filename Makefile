@@ -2,7 +2,6 @@ VERSION = `git rev-parse HEAD`
 ifeq ($(MODEL),)
 	MODEL=mega2560
 endif
-CXXFLAGS=-std=c++11 -pedantic -Wall -Wextra -Wno-unused-parameters
 
 .PHONY: build clean all driver
 
