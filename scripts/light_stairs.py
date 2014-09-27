@@ -1,4 +1,5 @@
 import hal
+import internet
 from time import sleep
 
 logger = hal.getLogger(__name__)
@@ -23,6 +24,7 @@ def illuminate_stairs(dt=60):
 def main():
     for trig_name, trig_active in hal.events():
         if trig_name == 'door_stairs' and trig_active and not hal.trig('knife_switch'):
+            internet.lechbot_event('door_stairs')
             illuminate_stairs()
 
 
