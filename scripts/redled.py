@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 import hal
+import internet
 from math import log
-from urllib2 import urlopen
 from json import loads
 from time import sleep
 
@@ -11,7 +11,7 @@ logger = hal.getLogger(__name__)
 def n_people():
     macs_json = None
     try:
-        macs_json = urlopen("http://pamela.urlab.be/mac.json").read()
+        macs_json = internet.pamela()
     except:
         logger.warning("Error when retrieving pamela's MAC.json")
         pass

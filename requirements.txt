@@ -3,3 +3,5 @@ ipython[notebook]
 numpy
 matplotlib
 git+https://github.com/C4ptainCrunch/graphite_feeder.py.git
+puka
+requests

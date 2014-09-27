@@ -18,7 +18,7 @@ def open_hs():
     hal.on("power")
     hal.on("leds_stairs")
     hal.on("ampli")
-
+    forward_to_lechbot('hs_open')
 
 def close_hs():
     log.info("CLOSE the hackerspace")
