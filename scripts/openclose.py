@@ -6,23 +6,28 @@ log = hal.getLogger(__name__)
 
 def open_hs():
     log.info("OPEN the hackerspace")
-    for anim in ("red", "green", "blue"):
+    for anim in ("red", "green", "blue", "kitchen"):
         hal.upload(anim, hal.sinusoid(250, 0, 200))
         hal.loop(anim)
         hal.play(anim)
         hal.fps(anim, 50)
         sleep(0.0001)
 
+    hal.one_shot("door_green")
+    hal.play("heater")
     hal.on("power")
     hal.on("leds_stairs")
+    hal.on("ampli")
 
 
 def close_hs():
     log.info("CLOSE the hackerspace")
 
+    hal.off("ampli")
     # Shotdown all leds
-    for anim in ("red", "green", "blue", "heater", "door_green"):
+    for anim in ("red", "green", "blue", "heater", "door_green", "kitchen"):
         hal.stop(anim)
+        sleep(0.0001)
     
     illuminate_stairs()
 

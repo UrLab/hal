@@ -11,8 +11,9 @@ logger = hal.getLogger(__name__)
 def n_people():
     macs_json = None
     try:
-        urlopen("http://pamela.urlab.be/mac.json").read()
+        macs_json = urlopen("http://pamela.urlab.be/mac.json").read()
     except:
+        logger.warning("Error when retrieving pamela's MAC.json")
         pass
     if macs_json:
         macs = loads(macs_json)
@@ -27,7 +28,6 @@ def main():
     last_fps = -1
     while True:
         n = n_people()
-        logger.debug("%d people"%(n))
         fps = 25*log(2+n)
         if fps != last_fps:
             hal.fps("red", fps)
