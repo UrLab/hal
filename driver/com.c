@@ -196,7 +196,7 @@ void *HAL_read_thread(void *args)
             resource->data.b = (bool) val;
 
             /* Notify potential readers that the value is available */
-            pthread_cond_broadcast(&(resource->cond));
+            pthread_cond_signal(&(resource->cond));
             pthread_mutex_unlock(&(resource->hal->mutex));
 
             /* If state change, also write to socket */
@@ -221,7 +221,7 @@ void *HAL_read_thread(void *args)
 
             pthread_mutex_lock(&sensor->hal->mutex);
             sensor->data.f = ((float) val)/1023;
-            pthread_cond_broadcast(&sensor->cond);
+            pthread_cond_signal(&sensor->cond);
             pthread_mutex_unlock(&sensor->hal->mutex);
         }
 
@@ -246,7 +246,7 @@ void *HAL_read_thread(void *args)
             }
 
             /* Notify potential readers that the value is available */
-            pthread_cond_broadcast(&(anim->cond));
+            pthread_cond_signal(&(anim->cond));
             pthread_mutex_unlock(&(anim->hal->mutex));
         }
 
@@ -257,7 +257,7 @@ void *HAL_read_thread(void *args)
             int id = strtol(line+1, NULL, 10);
             anim = hal->animations+id;
             pthread_mutex_lock(&(anim->hal->mutex));
-            pthread_cond_broadcast(&(anim->cond));
+            pthread_cond_signal(&(anim->cond));
             pthread_mutex_unlock(&(anim->hal->mutex));
         }
     }
