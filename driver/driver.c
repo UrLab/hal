@@ -39,11 +39,8 @@ int version_read(HALResource *backend, char * buffer, size_t size, off_t offset)
 
 int trigger_read(HALResource *trig, char *buffer, size_t size, off_t offset)
 {
-    pthread_mutex_lock(&hal.mutex);
-    HAL_ask_trigger(&hal, trig->id);
-    pthread_cond_wait(&trig->cond, &hal.mutex);
-    strcpy(buffer, (trig->data.b) ? "1\n" : "0\n");
-    pthread_mutex_unlock(&hal.mutex);
+    bool trig_state = HAL_ask_trigger(trig);
+    strcpy(buffer, trig_state ? "1\n" : "0\n");
     return 2;
 }
 
@@ -51,71 +48,50 @@ int binary_size(HALResource *backend){return 2;}
 
 int switch_read(HALResource *sw, char *buffer, size_t size, off_t offset)
 {
-    pthread_mutex_lock(&hal.mutex);
-    HAL_ask_switch(&hal, sw->id);
-    pthread_cond_wait(&sw->cond, &hal.mutex);
-    strcpy(buffer, sw->data.b ? "1\n" : "0\n");
-    pthread_mutex_unlock(&hal.mutex);
+    bool switch_state = HAL_ask_switch(sw);
+    strcpy(buffer, switch_state ? "1\n" : "0\n");
     return 2;
 }
 
 int switch_write(HALResource *sw, const char *buffer, size_t size, off_t offset)
 {
     bool on = buffer[0] != '0';
-    pthread_mutex_lock(&hal.mutex);
-    HAL_set_switch(&hal, sw->id, on);
-    pthread_cond_wait(&sw->cond, &hal.mutex);
-    pthread_mutex_unlock(&hal.mutex);
+    HAL_set_switch(sw, on);
     return size;
 }
 
 int animation_upload(HALResource *anim, const char *buffer, size_t size, off_t offset)
 {
-    unsigned char s = size&0xff;
-    pthread_mutex_lock(&hal.mutex);
-    HAL_upload_anim(&hal, anim->id, s, (const unsigned char*) buffer);
-    pthread_cond_wait(&anim->cond, &hal.mutex);
-    pthread_mutex_unlock(&hal.mutex);
+    unsigned char s = (size < 256) ? size : 255;
+    HAL_upload_anim(anim, s, (const unsigned char*) buffer);
     return s;
 }
 
 int anim_loop_write(HALResource *anim, const char *buffer, size_t size, off_t offset)
 {
     bool loop = buffer[0] != '0';
-    pthread_mutex_lock(&hal.mutex);
-    HAL_set_anim_loop(&hal, anim->id, loop);
-    pthread_cond_wait(&anim->cond, &hal.mutex);
-    pthread_mutex_unlock(&hal.mutex);
+    HAL_set_anim_loop(anim, loop);
     return size;
 }
 
 int anim_loop_read(HALResource *anim, char *buffer, size_t size, off_t offset)
 {
-    pthread_mutex_lock(&hal.mutex);
-    HAL_ask_anim_loop(&hal, anim->id);
-    pthread_cond_wait(&anim->cond, &hal.mutex);
-    strcpy(buffer, (anim->data.hhu4[0]) ? "1\n" : "0\n");
-    pthread_mutex_unlock(&hal.mutex);
+    bool looping = HAL_ask_anim_loop(anim);
+    strcpy(buffer, looping ? "1\n" : "0\n");
     return 2;
 }
 
 int anim_play_write(HALResource *anim, const char *buffer, size_t size, off_t offset)
 {
     bool play = buffer[0] != '0';
-    pthread_mutex_lock(&hal.mutex);
-    HAL_set_anim_play(&hal, anim->id, play);
-    pthread_cond_wait(&anim->cond, &hal.mutex);
-    pthread_mutex_unlock(&hal.mutex);
+    HAL_set_anim_play(anim, play);
     return size;
 }
 
 int anim_play_read(HALResource *anim, char *buffer, size_t size, off_t offset)
 {
-    pthread_mutex_lock(&hal.mutex);
-    HAL_ask_anim_play(&hal, anim->id);
-    pthread_cond_wait(&anim->cond, &hal.mutex);
-    strcpy(buffer, (anim->data.hhu4[1]) ? "1\n" : "0\n");
-    pthread_mutex_unlock(&hal.mutex);
+    bool playing = HAL_ask_anim_play(anim);
+    strcpy(buffer, playing ? "1\n" : "0\n");
     return 2;
 }
 
@@ -123,32 +99,32 @@ int anim_fps_write(HALResource *anim, const char *buffer, size_t size, off_t off
 {
     int fps = 0;
     int k = 1;
+
+    // Quick parse uint
     for (size_t i=size; i>0; i--){
-        if (strchr("\n\r\t ", buffer[i-1]))
+        if (buffer[i-1] < '0' || buffer[i-1] > '9')
             continue;
         fps += (buffer[i-1]-'0')*k;
-        //printf("DEBUG k=%d fps=%d buffer[%lu]=%c\n", k, fps, (long unsigned int) i-1, buffer[i-1]);
         k *= 10;
     }
+
+    // uint8 delay = 1..255 == 4..1000 fps
     if (fps < 4)         fps = 4;
     else if (fps > 1000) fps = 1000;
     unsigned int delay = 1000/fps;
-    pthread_mutex_lock(&hal.mutex);
-    HAL_set_anim_delay(&hal, anim->id, delay);
-    pthread_cond_wait(&anim->cond, &hal.mutex);
-    pthread_mutex_unlock(&hal.mutex);
+
+    HAL_set_anim_delay(anim, delay);
     return size;
 }
 
 int anim_fps_read(HALResource *anim, char *buffer, size_t size, off_t offset)
 {
-    int res = 0;
-    pthread_mutex_lock(&hal.mutex);
-    HAL_ask_anim_delay(&hal, anim->id);
-    pthread_cond_wait(&anim->cond, &hal.mutex);
-    unsigned int fps = 1000/anim->data.hhu4[2];
+    int res;
+    float delay = HAL_ask_anim_delay(anim);
+    if (delay == 0) // Avoid zero division
+        delay = 1;
+    unsigned int fps = 1000/delay;
     snprintf(buffer, size, "%hhu\n%n", fps, &res);
-    pthread_mutex_unlock(&hal.mutex);
     return res;
 }
 
@@ -159,11 +135,8 @@ int sensor_size(HALResource *backend){return 13;}
 int sensor_read(HALResource *sensor, char *buffer, size_t size, off_t offset)
 {
     int res = 0;
-    pthread_mutex_lock(&hal.mutex);
-    HAL_ask_sensor(&hal, sensor->id);
-    pthread_cond_wait(&sensor->cond, &hal.mutex);
-    snprintf(buffer, size, "%f\n%n", sensor->data.f, &res);
-    pthread_mutex_unlock(&hal.mutex);
+    float val = HAL_ask_sensor(sensor);
+    snprintf(buffer, size, "%f\n%n", val, &res);
     return res;
 }
 

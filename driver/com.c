@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
+/* Establish communication with arduino && initialize HAL structure */
 bool HAL_init(struct HAL_t *hal, const char *arduino_dev)
 {
     char buf[128];
@@ -101,6 +102,7 @@ bool HAL_init(struct HAL_t *hal, const char *arduino_dev)
         return false;
 }
 
+/* Create && bind HAL events socket */
 void HAL_socket_open(struct HAL_t *hal, const char *path)
 {
     size_t len;
@@ -117,6 +119,7 @@ void HAL_socket_open(struct HAL_t *hal, const char *path)
     chmod(sock_desc.sun_path, 0777);
 }
 
+/* Writes msg to every clients of HAL events socket */
 void HAL_socket_write(struct HAL_t *hal, const char *msg)
 {
     int len = (int) strlen(msg);
@@ -130,6 +133,7 @@ void HAL_socket_write(struct HAL_t *hal, const char *msg)
     }
 }
 
+/* Accept new client on HAL events socket; timeouts in 1ms */
 static void HAL_socket_accept(struct HAL_t *hal)
 {
     fd_set set;
@@ -265,6 +269,8 @@ void *HAL_read_thread(void *args)
 }
 
 typedef const unsigned char cuchar;
+
+/* Send bytes on arduino serial link */
 #define say(hal, char_array) HAL_say((hal), sizeof(char_array), (char_array))
 static inline void HAL_say(struct HAL_t *hal, size_t len, cuchar *bytes)
 {
@@ -286,73 +292,142 @@ static inline void HAL_say(struct HAL_t *hal, size_t len, cuchar *bytes)
     printf("\033[0m\n");
 }
 
-void HAL_ask_trigger(struct HAL_t *hal, int trig_id)
+bool HAL_ask_trigger(HALResource *trigger)
 {
-    cuchar req[] = {'T', trig_id};
-    say(hal, req);
+    bool res = 0;
+    cuchar req[] = {'T', trigger->id};
+
+    pthread_mutex_lock(&trigger->hal->mutex);
+    say(trigger->hal, req);
+    pthread_cond_wait(&trigger->cond, &trigger->hal->mutex);
+    res = trigger->data.b;
+    pthread_mutex_unlock(&trigger->hal->mutex);
+
+    return res;
 }
 
-void HAL_set_switch(struct HAL_t *hal, int switch_id, bool on)
+void HAL_set_switch(HALResource *sw, bool on)
 {
-    cuchar req[] = {'S', switch_id, on ? 1 : 0};
-    say(hal, req);
+    cuchar req[] = {'S', sw->id, on ? 1 : 0};
+
+    pthread_mutex_lock(&sw->hal->mutex);
+    say(sw->hal, req);
+    pthread_cond_wait(&sw->cond, &sw->hal->mutex);
+    pthread_mutex_unlock(&sw->hal->mutex);
 }
 
-void HAL_ask_switch(struct HAL_t *hal, int switch_id)
+bool HAL_ask_switch(HALResource *sw)
 {
-    cuchar req[] = {'S', switch_id, 42};
-    say(hal, req);
+    cuchar req[] = {'S', sw->id, 42};
+    bool res = false;
+
+    pthread_mutex_lock(&sw->hal->mutex);
+    say(sw->hal, req);
+    pthread_cond_wait(&sw->cond, &sw->hal->mutex);
+    res = sw->data.b;
+    pthread_mutex_unlock(&sw->hal->mutex);
+
+    return res;
 }
 
 void HAL_upload_anim(
-    struct HAL_t *hal, 
-    unsigned char anim_id, 
+    HALResource *anim, 
     unsigned char len, 
     const unsigned char *frames
 ){
-    cuchar req[] = {'A', anim_id, len};
-    say(hal, req);
-    HAL_say(hal, len, frames);
+    cuchar header[] = {'A', anim->id, len};
+    cuchar *req = calloc(sizeof(cuchar), 3+len);
+    memcpy((char*)req, header, 3);
+    memcpy((char*)req+3, frames, len);
+
+    pthread_mutex_lock(&anim->hal->mutex);
+    say(anim->hal, req);
+    pthread_cond_wait(&anim->cond, &anim->hal->mutex);
+    pthread_mutex_unlock(&anim->hal->mutex);
 }
 
-void HAL_ask_anim_play(struct HAL_t *hal, int anim_id)
+bool HAL_ask_anim_play(HALResource *anim)
 {
-    cuchar req[] = {'a', anim_id, 'p', 42};
-    say(hal, req);
+    cuchar req[] = {'a', anim->id, 'p', 42};
+    bool res = false;
+
+    pthread_mutex_lock(&anim->hal->mutex);
+    say(anim->hal, req);
+    pthread_cond_wait(&anim->cond, &anim->hal->mutex);
+    res = anim->data.hhu4[1];
+    pthread_mutex_unlock(&anim->hal->mutex);
+
+    return res;
 }
 
-void HAL_set_anim_play(struct HAL_t *hal, int anim_id, bool play)
+void HAL_set_anim_play(HALResource *anim, bool play)
 {
-    cuchar req[] = {'a', anim_id, 'p', play ? 1 : 0};
-    say(hal, req);
+    cuchar req[] = {'a', anim->id, 'p', play ? 1 : 0};
+
+    pthread_mutex_lock(&anim->hal->mutex);
+    say(anim->hal, req);
+    pthread_cond_wait(&anim->cond, &anim->hal->mutex);
+    pthread_mutex_unlock(&anim->hal->mutex);
 }
 
-void HAL_ask_anim_loop(struct HAL_t *hal, int anim_id)
+bool HAL_ask_anim_loop(HALResource *anim)
 {
-    cuchar req[] = {'a', anim_id, 'l', 42};
-    say(hal, req);
+    cuchar req[] = {'a', anim->id, 'l', 42};
+    bool res = false;
+
+    pthread_mutex_lock(&anim->hal->mutex);
+    say(anim->hal, req);
+    pthread_cond_wait(&anim->cond, &anim->hal->mutex);
+    res = anim->data.hhu4[0];
+    pthread_mutex_unlock(&anim->hal->mutex);
+
+    return res;
 }
 
-void HAL_set_anim_loop(struct HAL_t *hal, int anim_id, bool loop)
+void HAL_set_anim_loop(HALResource *anim, bool loop)
 {
-    cuchar req[] = {'a', anim_id, 'l', loop ? 1 : 0};
-    say(hal, req);
+    cuchar req[] = {'a', anim->id, 'l', loop ? 1 : 0};
+
+    pthread_mutex_lock(&anim->hal->mutex);
+    say(anim->hal, req);
+    pthread_cond_wait(&anim->cond, &anim->hal->mutex);
+    pthread_mutex_unlock(&anim->hal->mutex);
 }
 
-void HAL_ask_anim_delay(struct HAL_t *hal, int anim_id)
+bool HAL_ask_anim_delay(HALResource *anim)
 {
-    cuchar req[] = {'a', anim_id, 'd', 0};
-    say(hal, req);
+    cuchar req[] = {'a', anim->id, 'd', 0};
+    unsigned char res = false;
+
+    pthread_mutex_lock(&anim->hal->mutex);
+    say(anim->hal, req);
+    pthread_cond_wait(&anim->cond, &anim->hal->mutex);
+    res = anim->data.hhu4[2];
+    pthread_mutex_unlock(&anim->hal->mutex);
+
+    return res;
 }
 
-void HAL_set_anim_delay(struct HAL_t *hal, int anim_id, unsigned char delay)
+void HAL_set_anim_delay(HALResource *anim, unsigned char delay)
 {
-    cuchar req[] = {'a', anim_id, 'd', delay};
-    say(hal, req);
+    cuchar req[] = {'a', anim->id, 'd', delay};
+
+    pthread_mutex_lock(&anim->hal->mutex);
+    say(anim->hal, req);
+    pthread_cond_wait(&anim->cond, &anim->hal->mutex);
+    pthread_mutex_unlock(&anim->hal->mutex);
 }
 
-void HAL_ask_sensor(struct HAL_t *hal, int sensor_id)
+float HAL_ask_sensor(HALResource *sensor)
 {
-    cuchar req[] = {'C', sensor_id};
-    say(hal, req);
+    cuchar req[] = {'C', sensor->id};
+    int res = false;
+
+    pthread_mutex_lock(&sensor->hal->mutex);
+    say(sensor->hal, req);
+    pthread_cond_wait(&sensor->cond, &sensor->hal->mutex);
+    res = sensor->data.f;
+    pthread_mutex_unlock(&sensor->hal->mutex);
+
+    return res;
 }
