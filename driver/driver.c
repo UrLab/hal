@@ -41,7 +41,7 @@ int rx_bytes_read(HALResource *backend, char * buffer, size_t size, off_t offset
 {
     int res = 0;
     size_t rx = HAL_rx_bytes(&hal);
-    snprintf(buffer, size, "%lu%n", (unsigned long int) rx, &res);
+    snprintf(buffer, size, "%lu\n%n", (unsigned long int) rx, &res);
     return res;
 }
 
@@ -49,7 +49,7 @@ int tx_bytes_read(HALResource *backend, char * buffer, size_t size, off_t offset
 {
     int res = 0;
     size_t tx = HAL_tx_bytes(&hal);
-    snprintf(buffer, size, "%lu%n", (unsigned long int) tx, &res);
+    snprintf(buffer, size, "%lu\n%n", (unsigned long int) tx, &res);
     return res;
 }
 
@@ -173,8 +173,10 @@ static void HALFS_build()
 
     file = HALFS_insert(HALFS_root, "/driver/rx_bytes");
     file->ops.read = rx_bytes_read;
+    file->ops.size = sensor_size;
     file = HALFS_insert(HALFS_root, "/driver/tx_bytes");
     file->ops.read = tx_bytes_read;
+    file->ops.size = sensor_size;
 
     file = HALFS_insert(HALFS_root, "/events");
     file->ops.mode = 0444;
