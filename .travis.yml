@@ -2,6 +2,8 @@ language: c
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq libfuse-dev arduino-core
+ - virtualenv --distribute --no-site-packages ve
+ - source ve/bin/activate
  - pip install -r requirements.txt
 
 script: 
