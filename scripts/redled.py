@@ -9,14 +9,13 @@ from time import sleep
 logger = hal.getLogger(__name__)
 
 def n_people():
-    macs_json = None
+    macs = None
     try:
-        macs_json = internet.pamela()
+        macs = internet.pamela()
     except:
         logger.warning("Error when retrieving pamela's MAC.json")
         pass
-    if macs_json:
-        macs = loads(macs_json)
+    if macs:
         return len(macs["color"]) + len(macs["grey"])
     return 0
 
