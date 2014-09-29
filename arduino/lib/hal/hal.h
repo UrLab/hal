@@ -69,9 +69,21 @@ class Animation : public Resource {
         bool _loop, _play;
         unsigned int _delay;
         unsigned long int _tlast;
+        bool _buzzer;
+
+        void setOutput(unsigned char val){
+            if (! _buzzer)
+                analogWrite(pin(), val);
+            else if (val == 0)
+                noTone(pin());
+            else {
+                int note = 10*val;
+                tone(pin(), note);
+            }
+        }
     public:
-        Animation(const char *name, int pin) : 
-        Resource(name, pin), _len(0), _loop(true), _play(true), _delay(100){
+        Animation(const char *name, int pin, bool is_buzzer=false) : 
+        Resource(name, pin), _len(0), _loop(true), _play(true), _delay(100), _buzzer(is_buzzer){
             memset(_frames, 0, sizeof(_frames));
             pinMode(pin, OUTPUT);
         }
@@ -90,7 +102,7 @@ class Animation : public Resource {
         unsigned char &operator[](unsigned char i){return _frames[i];}
         void run(unsigned long int t){
             if (_len == 0 || ! _play){
-                analogWrite(pin(), 0);
+                setOutput(0);
                 return;
             }
             if (t - _tlast >= _delay){
@@ -100,7 +112,7 @@ class Animation : public Resource {
                     _play = false;
                 _tlast = t;
             }
-            analogWrite(pin(), _frames[_i]);
+            setOutput(_frames[_i]);
         }
 };
 
