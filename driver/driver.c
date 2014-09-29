@@ -37,6 +37,22 @@ int version_read(HALResource *backend, char * buffer, size_t size, off_t offset)
     return l;
 }
 
+int rx_bytes_read(HALResource *backend, char * buffer, size_t size, off_t offset)
+{
+    int res = 0;
+    size_t rx = HAL_rx_bytes(&hal);
+    snprintf(buffer, size, "%lu%n", (unsigned long int) rx, &res);
+    return res;
+}
+
+int tx_bytes_read(HALResource *backend, char * buffer, size_t size, off_t offset)
+{
+    int res = 0;
+    size_t tx = HAL_tx_bytes(&hal);
+    snprintf(buffer, size, "%lu%n", (unsigned long int) tx, &res);
+    return res;
+}
+
 int trigger_read(HALResource *trig, char *buffer, size_t size, off_t offset)
 {
     bool trig_state = HAL_ask_trigger(trig);
@@ -154,6 +170,11 @@ static void HALFS_build()
     HALFS * file = HALFS_insert(HALFS_root, "/version");
     file->ops.read = version_read;
     file->ops.size = version_size;
+
+    file = HALFS_insert(HALFS_root, "/driver/rx_bytes");
+    file->ops.read = rx_bytes_read;
+    file = HALFS_insert(HALFS_root, "/driver/tx_bytes");
+    file->ops.read = tx_bytes_read;
 
     file = HALFS_insert(HALFS_root, "/events");
     file->ops.mode = 0444;

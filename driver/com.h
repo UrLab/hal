@@ -29,4 +29,7 @@ void HAL_set_anim_delay(HALResource *anim, unsigned char delay);
 
 float HAL_ask_sensor(HALResource *sensor);
 
+size_t HAL_rx_bytes(struct HAL_t *hal);
+size_t HAL_tx_bytes(struct HAL_t *hal);
+
 #endif

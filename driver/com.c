@@ -164,6 +164,8 @@ void *HAL_read_thread(void *args)
         if (! serialport_read_until(hal->serial_fd, buf, '\n', sizeof(buf), 100))
             continue;
 
+        hal->rx_bytes += strlen(buf);
+
         line = strip(buf);
         len = strlen(line);
         if (len == 0)
@@ -288,6 +290,8 @@ static inline void HAL_say(struct HAL_t *hal, size_t len, cuchar *bytes)
         }
         if (j == 5)
             printf("\033[43m(ERR)\033[0;31;1m");
+        else
+            hal->tx_bytes++;
     }
     printf("\033[0m\n");
 }
@@ -429,5 +433,23 @@ float HAL_ask_sensor(HALResource *sensor)
     res = sensor->data.f;
     pthread_mutex_unlock(&sensor->hal->mutex);
 
+    return res;
+}
+
+size_t HAL_rx_bytes(struct HAL_t *hal)
+{
+    size_t res = 0;
+    pthread_mutex_lock(&hal->mutex);
+    res = hal->rx_bytes;
+    pthread_mutex_unlock(&hal->mutex);
+    return res;
+}
+
+size_t HAL_tx_bytes(struct HAL_t *hal)
+{
+    size_t res = 0;
+    pthread_mutex_lock(&hal->mutex);
+    res = hal->tx_bytes;
+    pthread_mutex_unlock(&hal->mutex);
     return res;
 }

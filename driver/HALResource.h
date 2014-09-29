@@ -30,6 +30,8 @@ struct HAL_t {
     int socket_n_clients;
     int socket_clients[HAL_SOCK_MAXCLIENTS];
 
+    size_t tx_bytes, rx_bytes;
+
     pthread_mutex_t mutex;
     char version[41];
     bool ready;
