@@ -339,13 +339,11 @@ void HAL_upload_anim(
     unsigned char len, 
     const unsigned char *frames
 ){
-    cuchar header[] = {'A', anim->id, len};
-    cuchar *req = calloc(sizeof(cuchar), 3+len);
-    memcpy((char*)req, header, 3);
+    cuchar req[258] = {'A', anim->id, len};
     memcpy((char*)req+3, frames, len);
 
     pthread_mutex_lock(&anim->hal->mutex);
-    say(anim->hal, req);
+    HAL_say(anim->hal, len+3, req);
     pthread_cond_wait(&anim->cond, &anim->hal->mutex);
     pthread_mutex_unlock(&anim->hal->mutex);
 }
@@ -398,7 +396,7 @@ void HAL_set_anim_loop(HALResource *anim, bool loop)
     pthread_mutex_unlock(&anim->hal->mutex);
 }
 
-bool HAL_ask_anim_delay(HALResource *anim)
+unsigned char HAL_ask_anim_delay(HALResource *anim)
 {
     cuchar req[] = {'a', anim->id, 'd', 0};
     unsigned char res = false;
@@ -425,7 +423,7 @@ void HAL_set_anim_delay(HALResource *anim, unsigned char delay)
 float HAL_ask_sensor(HALResource *sensor)
 {
     cuchar req[] = {'C', sensor->id};
-    int res = false;
+    float res = 0;
 
     pthread_mutex_lock(&sensor->hal->mutex);
     say(sensor->hal, req);
