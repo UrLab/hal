@@ -46,7 +46,7 @@ void setup(){
     Serial.begin(115200);
     for (int i=0; i<N_ANIMATIONS; i++){
         animations[i].setLen(1);
-        animations[i][0] = 128;
+        animations[i][0] = 0;
     }
 }
 
