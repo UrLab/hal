@@ -130,9 +130,9 @@ def upload(anim, frames):
     assert 0 < len(frames) < 256
     if isinstance(frames, list):
         if isinstance(frames[0], int):
-            frames = ''.join(map(ord, frames))
+            frames = ''.join(map(chr, frames))
         elif isinstance(frames[0], float):
-            frames = ''.join(ord(int(255 * f)) for f in frames)
+            frames = ''.join(chr(int(255 * f)) for f in frames)
         elif isinstance(frames[0], str):
             frames = ''.join(frames)
     assert type(frames) in (str, unicode, bytes)
