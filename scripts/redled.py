@@ -3,7 +3,6 @@
 import hal
 import internet
 from math import log
-from json import loads
 from time import sleep
 
 logger = hal.getLogger(__name__)

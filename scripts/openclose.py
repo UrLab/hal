@@ -14,6 +14,7 @@ def open_hs(called_on_trigger):
         hal.fps(anim, 50)
         sleep(0.0001)
 
+    hal.upload("bell_eyes", [255])
     hal.one_shot("door_green")
     hal.play("heater")
     hal.on("power")
@@ -35,6 +36,7 @@ def close_hs():
     
     illuminate_stairs()
     internet.spaceapi_close()
+    hal.upload("bell_eyes", [0])
 
 
 def main():

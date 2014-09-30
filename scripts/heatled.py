@@ -7,14 +7,22 @@ logger = hal.getLogger(__name__)
 
 def main():
     last_temp = -1
-    hal.play("heater")
+    is_playing = False
+
     hal.fps("heater", 42)
     while True:
-        temp = hal.sensor("temp_radiator")
-        if last_temp != temp:
-            hal.upload("heater", hal.sinusoid(val_max=temp, n_frames=100))
-            last_temp = temp
-            logger.info("Uploading new heater sinusoid for value %f" % (temp))
+        if hal.trig("heater"):
+            if not is_playing:
+                is_playing = True
+            temp = hal.sensor("temp_radiator")
+            if last_temp != temp:
+                hal.upload("heater", hal.sinusoid(val_max=temp, n_frames=100))
+                last_temp = temp
+                logger.info("Uploaded new heater sinusoid for value %f" % (temp))
+        elif is_playing:
+            hal.stop("heater")
+            is_playing = False
+            logger.info("Put off heater led (heater off)")
         sleep(60)
 
 
