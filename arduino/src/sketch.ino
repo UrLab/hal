@@ -24,7 +24,8 @@ Animation animations[] = {
     Animation("blue", 2),
     Animation("heater", 6),
     Animation("kitchen", 7),
-    Animation("buzzer", 45, true)
+    Animation("buzzer", 45, true),
+    Animation("bell_eyes", 13)
 };
 
 #define N_SENSORS (sizeof(sensors)/sizeof(Sensor))

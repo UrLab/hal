@@ -18,10 +18,11 @@ def main():
             if last_temp != temp:
                 hal.upload("heater", hal.sinusoid(val_max=temp, n_frames=100))
                 last_temp = temp
-                logger.info("Uploading new heater sinusoid for value %f" % (temp))
+                logger.info("Uploaded new heater sinusoid for value %f" % (temp))
         elif is_playing:
             hal.stop("heater")
             is_playing = False
+            logger.info("Put off heater led (heater off)")
         sleep(60)
 
 
