@@ -16,8 +16,10 @@ def main():
     hal.fps('buzzer', 17)
     hal.upload('buzzer', 2*funkytown)
     hal.one_shot('buzzer')
-    while True:
-        hal.waitFor('bell')
+    hal.fps('bell_eyes', 60)
+    for ev, ev_on in hal.events():
+        if not ev_on or ev != 'bell':
+            continue
         logger.info("Spotted someone at the door")
         hal.upload('bell_eyes', hal.sinusoid(n_frames=20, val_max=255))
         hal.play('buzzer')
