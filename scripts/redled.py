@@ -1,10 +1,11 @@
 #!/usr/bin/python
 
-import hal
+from config import get_hal
 import internet
 from math import log
 from time import sleep
 
+hal = get_hal()
 logger = hal.getLogger(__name__)
 
 def n_people():

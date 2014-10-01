@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
-import hal
+from config import get_hal
 from time import sleep
 
+hal = get_hal()
 logger = hal.getLogger(__name__)
 
 def main():

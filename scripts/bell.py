@@ -1,20 +1,19 @@
-import hal
+from config import get_hal
+from halpy.generators import Partition, Note, Silence
 from time import sleep
 
-FUNKYTOWN = [
-    49, 49, 49, 0, 49, 49, 49, 0, 44, 44, 44, 0, 49, 49, 49, 49, 49, 49, 49, 0,
-    37, 37, 37, 37, 37, 37, 37, 0, 37, 37, 37, 0, 49, 49, 49, 0, 66, 66, 66, 0,
-    62, 62, 62, 0, 49, 49, 49, 49, 49, 49, 49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0
-]
-
+hal = get_hal()
 logger = hal.getLogger(__name__)
 
+funkytown = Partition(
+    Note(494), Note(494), Note(440), Note(494, 2), Note(370, 2), Note(370), 
+    Note(494), Note(659), Note(622), Note(494, 2), Silence(3)
+)
+
 def main():
-    funkytown = [FUNKYTOWN[i]*(1+(i%2)) for i in range(len(FUNKYTOWN))]
     hal.stop('buzzer')
     hal.fps('buzzer', 17)
-    hal.upload('buzzer', 2*funkytown)
+    hal.upload('buzzer', 2 * funkytown.to_frames())
     hal.one_shot('buzzer')
     hal.fps('bell_eyes', 60)
     for ev, ev_on in hal.events():

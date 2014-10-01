@@ -1,8 +1,9 @@
-import hal
+from config import get_hal
 import internet
 from light_stairs import illuminate_stairs
 from time import sleep
 
+hal = get_hal()
 log = hal.getLogger(__name__)
 
 def open_hs(called_on_trigger):

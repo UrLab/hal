@@ -1,7 +1,8 @@
-import hal
+from config import get_hal
 import internet
 from time import sleep
 
+hal = get_hal()
 logger = hal.getLogger(__name__)
 
 def illuminate_stairs(dt=60):

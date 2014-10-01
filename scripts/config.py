@@ -11,3 +11,8 @@ try:
     from local_config import *
 except ImportError:
     pass
+
+from halpy.hal import HAL
+
+def get_hal():
+    return HAL(HALFS_ROOT)

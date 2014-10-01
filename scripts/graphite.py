@@ -1,9 +1,8 @@
 from graphite_feeder import GraphiteFeeder
-import hal
-from config import SENSORS_GRAPHITE
+from config import SENSORS_GRAPHITE, get_hal
 
+hal = get_hal()
 logger = hal.getLogger(__name__)
-
 server = GraphiteFeeder(SENSORS_GRAPHITE, prefix="hal", delay=60)
 
 @server.metric(multiple=True)
