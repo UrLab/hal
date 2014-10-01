@@ -4,10 +4,12 @@ and interacts with the Hackerspace crew.
 
 # Setup
 
+	$ git submodule init && git submodule update
 	$ sudo apt-get install arduino-core libfuse-dev
 	$ virtualenv --distribute --no-site-packages ve
 	$ source ve/bin/activate
 	$ pip install -r requirements.txt
+	$ pushd halpy && python setup.py develop && popd
 
 # Compile driver & upload Arduino code
 	
@@ -17,8 +19,6 @@ and interacts with the Hackerspace crew.
 
 * Actual Git version (for driver && arduino); not an arbitrary string
 * More security check (bound checking, syscall return values, ...)
-* Driver statistics
-* Incorporate buzzer
 
 # Usage
 ## Launch driver
@@ -62,6 +62,25 @@ and interacts with the Hackerspace crew.
 
 	$ cat /dev/hal/version
 	0123456789abcdef0123456789abcdef01234567
+
+## Using halpy
+
+In the **script** directory:
+
+```python
+from config import get_hal
+from halpy.generators import Partition, Note, Silence
+
+hal = get_hal()
+hal.sensor('temp_ambiant')
+
+hal.stop('buzzer')
+hal.fps('buzzer', 17)
+hal.one_shot('buzzer')
+hal.upload('buzzer', Partition(Note(440), Silence(), Note(494)).to_frames())
+hal.play('buzzer')
+```
+
 
 ## Hal Resources
 ### Switchs 
