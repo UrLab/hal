@@ -1,4 +1,5 @@
 from config import get_hal
+import internet
 from halpy.generators import Partition, Note, Silence
 from time import sleep
 
@@ -22,6 +23,7 @@ def main():
         logger.info("Spotted someone at the door")
         hal.upload('bell_eyes', hal.sinusoid(n_frames=20, val_max=255))
         hal.play('buzzer')
+        internet.lechbot_event('bell')
         sleep(2)
         hal.upload('bell_eyes', [255])
 
