@@ -1,3 +1,7 @@
 [submodule "halpy"]
 	path = halpy
 	url = https://github.com/UrLab/halpy.git
+
+[submodule "arduino/lib/hal"]
+	path = arduino/lib/hal
+	url = https://github.com/UrLab/hal-arduino.git
