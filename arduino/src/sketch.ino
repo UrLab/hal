@@ -5,7 +5,7 @@ Trigger triggers[] = {
     Trigger("door_stairs", 51, LOW),
     Trigger("bell", 49, HIGH),
     Trigger("knife_switch", 53, HIGH),
-    Trigger("passage", 12, LOW),
+    Trigger("passage", 28, LOW),
     Trigger("heater", 47, LOW)
 };
 
@@ -47,6 +47,9 @@ void loop(){
     hal.loop();
 
     /* Power supply off if no communication */
-    if (hal.ping_timeout())
-        power_supply.deactivate();
+    if (hal.last_com_delay() > 2500)
+       power_supply.deactivate();
+
+    // Serial.print("Last com delay: ");
+    // Serial.println(hal.last_com_delay(), DEC);
 }
