@@ -1,0 +1,3 @@
+[submodule "arduino/lib/hal"]
+	path = arduino/lib/hal
+	url = https://github.com/UrLab/hal-arduino.git
