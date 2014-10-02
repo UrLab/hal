@@ -25,9 +25,10 @@ def open_hs(called_on_trigger):
         internet.lechbot_event('hs_open')
         internet.spaceapi_open()
 
-def close_hs():
+def close_hs(called_on_trigger):
     log.info("CLOSE the hackerspace")
-    internet.lechbot_event('hs_close')
+    if called_on_trigger:
+        internet.lechbot_event('hs_close')
 
     hal.off("ampli")
     # Shotdown all leds
@@ -35,14 +36,17 @@ def close_hs():
         hal.stop(anim)
         sleep(0.0001)
     
-    illuminate_stairs()
-    internet.spaceapi_close()
+    if called_on_trigger:
+        illuminate_stairs()
+        internet.spaceapi_close()
     hal.upload("bell_eyes", [0])
 
 
 def main():
     if hal.trig("knife_switch"):
         open_hs(called_on_trigger=False)
+    else:
+        close_hs(called_on_trigger=False)
 
     for trigger_name, state in hal.events():
         if trigger_name != 'knife_switch':
@@ -51,7 +55,7 @@ def main():
         if state is True:
             open_hs(called_on_trigger=True)
         else:
-            close_hs()
+            close_hs(called_on_trigger=True)
 
 
 if __name__ == "__main__":
