@@ -3,3 +3,4 @@ git+https://github.com/C4ptainCrunch/graphite_feeder.py.git
 puka
 requests
 git+https://github.com/UrLab/halpy.git
+setproctitle
