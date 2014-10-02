@@ -2,9 +2,9 @@
 
 #define N_TRIGGERS (sizeof(triggers)/sizeof(Trigger))
 Trigger triggers[] = {
-    Trigger("door_stairs", 51, LOW),
+    Trigger("door_stairs", 51, LOW, 500),
     Trigger("bell", 49, HIGH),
-    Trigger("knife_switch", 53, HIGH),
+    Trigger("knife_switch", 53, HIGH, 5000),
     Trigger("passage", 12, LOW),
     Trigger("heater", 47, LOW)
 };
