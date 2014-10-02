@@ -10,5 +10,8 @@ def sensors():
     logger.info("Retrieve sensors...")
     return hal.sensors()
 
-if __name__ == '__main__':
+def main():
     server.feed()
+
+if __name__ == '__main__':
+    main()
