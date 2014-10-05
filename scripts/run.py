@@ -12,7 +12,8 @@ TO_RUN = [
     "light_stairs", 
     "bell", 
     "heatled", 
-    "redled"
+    "redled",
+    "door_flash"
 ]
 
 def wrap_main(name, main):
