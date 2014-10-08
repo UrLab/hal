@@ -6,7 +6,7 @@ import requests
 import urllib
 from socket import gaierror
 
-from config import RMQ_HOST, LECHBOT_EVENTS_QUEUE, STATUS_CHANGE_URL
+from config import RMQ_HOST, LECHBOT_EVENTS_QUEUE, STATUS_CHANGE_URL, SENSORS_GRAPHITE
 
 
 def lechbot_event(name):
@@ -59,3 +59,24 @@ def spaceapi_close():
         return requests.get(STATUS_CHANGE_URL + "?status=close").status_code == 200
     except urllib.request.URLError:
         return False
+
+
+class GraphiteEvents:
+    def __init__(self, server, prefix=""):
+        self.server = server if not server[-1] == "/" else server[:-1]
+        self.prefix = prefix
+
+    def send(self, what, tags=[], data=""):
+        payload = {
+            "what": self.prefix + " " + what,
+            "tags": ",".join(tags),
+            "data": data
+        }
+
+        try:
+            r = requests.post("{}/events/".format(self.server), data=json.dumps(payload))
+            return r
+        except urllib.request.URLError:
+            return False
+
+events = GraphiteEvents(SENSORS_GRAPHITE, "hal")
