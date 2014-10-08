@@ -24,6 +24,7 @@ def open_hs(called_on_trigger):
     if called_on_trigger:
         internet.lechbot_event('hs_open')
         internet.spaceapi_open()
+        internet.events.send('hs_open', ["open", "status"])
 
 def close_hs(called_on_trigger):
     log.info("CLOSE the hackerspace")
@@ -39,6 +40,7 @@ def close_hs(called_on_trigger):
     if called_on_trigger:
         illuminate_stairs()
         internet.spaceapi_close()
+        internet.events.send("hs_close", ["close", "status"])
     hal.upload("bell_eyes", [0])
 
 

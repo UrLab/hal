@@ -39,7 +39,7 @@ def pamela():
     """
     try:
         return json.loads(requests.get("http://pamela.urlab.be/mac.json").content)
-    except urllib.request.URLError:
+    except requests.ConnectionError:
         return {
             "color": [],
             "hidden": 0,
@@ -50,14 +50,14 @@ def pamela():
 def spaceapi_open():
     try:
         return requests.get(STATUS_CHANGE_URL + "?status=open").status_code == 200
-    except urllib.request.URLError:
+    except requests.ConnectionError:
         return False
 
 
 def spaceapi_close():
     try:
         return requests.get(STATUS_CHANGE_URL + "?status=close").status_code == 200
-    except urllib.request.URLError:
+    except requests.ConnectionError:
         return False
 
 
@@ -76,7 +76,7 @@ class GraphiteEvents:
         try:
             r = requests.post("{}/events/".format(self.server), data=json.dumps(payload))
             return r
-        except urllib.request.URLError:
+        except requests.ConnectionError:
             return False
 
-events = GraphiteEvents(SENSORS_GRAPHITE, "hal")
+events = GraphiteEvents("http://" + SENSORS_GRAPHITE, "hal")

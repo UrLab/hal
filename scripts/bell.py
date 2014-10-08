@@ -31,6 +31,7 @@ def main():
         for name in BLINK:
             hal.fps(name, 450)
         internet.lechbot_event('bell')
+        internet.events.send("bell", ["bell"])
         sleep(5)
 
         for name in BLINK:
