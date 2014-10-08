@@ -36,8 +36,9 @@ try:
             main = wrap_main(name, mod.main)
             processes.append(Process(target=main, name=name))
             logger.info("New process " + name)
+            processes[-1].start()
+            sleep(1)
 
-    map(Process.start, processes)
     map(Process.join, processes)
 except:
     map(Process.terminate, processes)

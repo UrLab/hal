@@ -8,3 +8,6 @@
 [submodule "driver"]
 	path = driver
 	url = https://github.com/UrLab/hal-driver.git
+[submodule "webapp"]
+	path = webapp
+	url = https://github.com/UrLab/hal-from-space.git

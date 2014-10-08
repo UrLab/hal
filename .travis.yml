@@ -6,4 +6,4 @@ before_install:
 
 script: 
  - "make driver && make -C driver tests"
- - "cd arduino && ino build"
+ - "cd arduino && ino build && ino build -m mega2560"
