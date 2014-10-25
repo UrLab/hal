@@ -1,4 +1,5 @@
 from config import get_hal
+from time import time
 import internet
 import signal
 
@@ -28,9 +29,14 @@ def illuminate_stairs(dt=90):
     signal.alarm(dt)
 
 
+ast_trig = 0
+
 def main():
     for trig_name, trig_active in hal.events():
-        if trig_name == 'door_stairs' and trig_active and not hal.trig('knife_switch'):
+        knife_on = hal.trig('knife_switch')
+        door_open = trig_name == 'door_stairs' and trig_active
+        if door_open and not knife_on and time() - last_trig > 60:
+            last_trig = time()
             illuminate_stairs()
             internet.lechbot_event('door_stairs')
             internet.events.send('door_stairs', ["door_stairs"])
