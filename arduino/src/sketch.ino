@@ -33,20 +33,24 @@ Sensor sensors[] = {
     Sensor("light_outside", 2)
 };
 
+
 Switch & power_supply = switchs[0];
 HAL_CREATE(hal, sensors, triggers, switchs, animations);
 
+int WATCHDOG_QUESTION_PIN = 27;
+int WATCHDOG_ANSWER_PIN   = 29;
+
 void setup(){
     hal.setup();
+    pinMode(WATCHDOG_QUESTION_PIN, INPUT);
+    pinMode(WATCHDOG_ANSWER_PIN, OUTPUT);
 }
 
 void loop(){
+    digitalWrite(WATCHDOG_ANSWER_PIN, digitalRead(WATCHDOG_QUESTION_PIN));
     hal.loop();
 
     /* Power supply off if no communication */
     if (hal.last_com_delay() > 2500)
        power_supply.deactivate();
-
-    // Serial.print("Last com delay: ");
-    // Serial.println(hal.last_com_delay(), DEC);
 }
