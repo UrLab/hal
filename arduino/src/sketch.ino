@@ -1,6 +1,6 @@
 #include "hal.h"
 
-#define N_TRIGGERS (sizeof(triggers)/sizeof(Trigger))
+
 Trigger triggers[] = {
     Trigger("door_stairs", 51, LOW, 500),
     Trigger("bell", 49, HIGH),
@@ -9,14 +9,12 @@ Trigger triggers[] = {
     Trigger("heater", 47, LOW)
 };
 
-#define N_SWITCHS (sizeof(switchs)/sizeof(Switch))
 Switch switchs[] = {
     Switch("power", 22),
     Switch("leds_stairs", 24),
     Switch("ampli", 26)
 };
 
-#define N_ANIMATIONS (sizeof(animations)/sizeof(Animation))
 Animation animations[] = {
     Animation("red", 3),
     Animation("door_green", 5),
@@ -28,7 +26,6 @@ Animation animations[] = {
     Animation("bell_eyes", 13)
 };
 
-#define N_SENSORS (sizeof(sensors)/sizeof(Sensor))
 Sensor sensors[] = {
     Sensor("temp_radiator", 3),
     Sensor("temp_ambiant", 1),
