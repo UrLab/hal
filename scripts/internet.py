@@ -6,7 +6,7 @@ import requests
 import urllib
 from socket import gaierror
 
-from config import RMQ_HOST, LECHBOT_EVENTS_QUEUE, STATUS_CHANGE_URL, SENSORS_GRAPHITE
+from config import RMQ_HOST, LECHBOT_EVENTS_QUEUE, STATUS_GET_URL, STATUS_CHANGE_URL, SENSORS_GRAPHITE
 
 
 def lechbot_event(name):
@@ -58,6 +58,14 @@ def spaceapi_close():
     try:
         return requests.get(STATUS_CHANGE_URL + "?status=close").status_code == 200
     except requests.ConnectionError:
+        return False
+
+
+def spaceapi_isopen():
+    try:
+        resp = requests.get(STATUS_GET_URL)
+        return resp.status_code == 200 and "open" in resp.content
+    except:
         return False
 
 
