@@ -21,7 +21,7 @@ def open_hs(called_on_trigger):
     hal.on("power")
     hal.on("leds_stairs")
     hal.on("ampli")
-    if called_on_trigger and not internet.spaceapi_is_open():
+    if called_on_trigger and not internet.spaceapi_isopen():
         internet.lechbot_event('hs_open')
         internet.spaceapi_open()
         internet.events.send('hs_open', ["open", "status"])
@@ -37,7 +37,7 @@ def close_hs(called_on_trigger):
         hal.stop(anim)
         sleep(0.0001)
     
-    if called_on_trigger and internet.spaceapi_is_open():
+    if called_on_trigger and internet.spaceapi_isopen():
         illuminate_stairs()
         internet.spaceapi_close()
         internet.events.send("hs_close", ["close", "status"])
