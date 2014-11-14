@@ -29,7 +29,7 @@ def illuminate_stairs(dt=90):
     signal.alarm(dt)
 
 
-ast_trig = 0
+last_trig = 0
 
 def main():
     for trig_name, trig_active in hal.events():
