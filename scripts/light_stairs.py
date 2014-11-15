@@ -32,6 +32,7 @@ def illuminate_stairs(dt=90):
 last_trig = 0
 
 def main():
+    global last_trig
     for trig_name, trig_active in hal.events():
         knife_on = hal.trig('knife_switch')
         door_open = trig_name == 'door_stairs' and trig_active
