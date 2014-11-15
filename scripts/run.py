@@ -13,7 +13,8 @@ TO_RUN = [
     "bell", 
     "heatled", 
     "redled",
-    "door_flash"
+    "door_flash",
+    "lechbot_notif"
 ]
 
 def wrap_main(name, main):

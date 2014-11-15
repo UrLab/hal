@@ -20,6 +20,7 @@ def get_lechbot_queue(queue_name):
     client = puka.Client(RMQ_HOST)
     client.wait(client.connect())
     client.wait(client.queue_declare(queue=queue_name))
+    return client
 
 
 def lechbot_event(name):
@@ -29,7 +30,7 @@ def lechbot_event(name):
     See also: https://github.com/titouanc/lechbot/blob/master/plugins/HAL.rb
     """
     try:
-        client = get_lechbot_queue(LECHBOT_EVENTS_QUEUE))
+        client = get_lechbot_queue(LECHBOT_EVENTS_QUEUE)
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         message = {
             'time': now,
@@ -45,19 +46,15 @@ def lechbot_event(name):
 
 
 def lechbot_notifications():
-    self.client = get_lechbot_queue(LECHBOT_NOTIFS_QUEUE)
-    promise = self.client.basic_consume(queue=AMQ_QUEUE, prefetch_count=1)
+    client = get_lechbot_queue(LECHBOT_NOTIFS_QUEUE)
+    promise = client.basic_consume(queue=LECHBOT_NOTIFS_QUEUE)
     while True:
-        result = self.client.wait(promise)
-        try:
-            data = json.loads(result["body"])
-            send_time = datetime.strptime(data['time'], "%Y-%m-%d %H:%M:%S")
-            if (datetime.now() - send_time).total_seconds() < 120:
-                yield data
-        except:
-            pass
+        result = client.wait(promise)
+        data = json.loads(result["body"])
+        send_time = datetime.strptime(data['time'], "%Y-%m-%d %H:%M:%S")
         client.basic_ack(result)
-        promise = self.client.basic_consume(queue=AMQ_QUEUE, prefetch_count=1)
+        if (datetime.now() - send_time).total_seconds() < 120:
+            yield data
 
 
 def pamela():

@@ -1,11 +1,12 @@
 #!/usr/bin/python
 
+from halpy.generators import Partition, Note
 from config import get_hal
 import internet
 from time import sleep
 from bell import funkytown
 
-{
+Melodies = {
     "trash" : Partition(
         Note(220), Note(262), Note(330), Note(440), Note(494), Note(262), Note(330),
         Note(494), Note(523), Note(330), Note(262), Note(523), Note(370), Note(294),
@@ -20,8 +21,12 @@ logger = hal.getLogger(__name__)
 
 def main():
     for notification in internet.lechbot_notifications():
-        if notification['name'] == "trash":
-            hal.upload("buzzer", Stairways_to_heaven.to_frames())
+        logger.info("Got notification " + notification['name'])
+        if notification['name'] in Melodies:
+            hal.upload("buzzer", Melodies[notification['name']].to_frames())
             hal.play("buzzer")
-            sleep(7)
+            sleep(15)
             hal.upload("buzzer", funkytown.to_frames())
+
+if __name__ == "__main__":
+    main()
