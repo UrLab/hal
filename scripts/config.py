@@ -2,6 +2,7 @@ HALFS_ROOT = "/dev/hal"
 
 RMQ_HOST = "amqp://guest:guest@localhost"
 LECHBOT_EVENTS_QUEUE = "test.hal.events"
+LECHBOT_NOTIFS_QUEUE = "test.hal.notifs"
 
 SENSORS_GRAPHITE = "localhost"
 

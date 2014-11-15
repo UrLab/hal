@@ -6,7 +6,20 @@ import requests
 import urllib
 from socket import gaierror
 
-from config import RMQ_HOST, LECHBOT_EVENTS_QUEUE, STATUS_GET_URL, STATUS_CHANGE_URL, SENSORS_GRAPHITE
+from config import (
+    RMQ_HOST, LECHBOT_EVENTS_QUEUE, LECHBOT_NOTIFS_QUEUE, STATUS_GET_URL,
+    STATUS_CHANGE_URL, SENSORS_GRAPHITE
+)
+
+
+def get_lechbot_queue(queue_name):
+    """
+    Return a puka client connected to LechBot's RabbitMQ broker, with given
+    queue name acquired
+    """
+    client = puka.Client(RMQ_HOST)
+    client.wait(client.connect())
+    client.wait(client.queue_declare(queue=queue_name))
 
 
 def lechbot_event(name):
@@ -16,13 +29,11 @@ def lechbot_event(name):
     See also: https://github.com/titouanc/lechbot/blob/master/plugins/HAL.rb
     """
     try:
-        client = puka.Client(RMQ_HOST)
-        client.wait(client.connect())
-        client.wait(client.queue_declare(queue=LECHBOT_EVENTS_QUEUE))
+        client = get_lechbot_queue(LECHBOT_EVENTS_QUEUE))
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         message = {
             'time': now,
-            'trigger': name
+            'name': name
         }
         client.wait(client.basic_publish(
             exchange='',
@@ -31,6 +42,22 @@ def lechbot_event(name):
         ))
     except gaierror:
         pass
+
+
+def lechbot_notifications():
+    self.client = get_lechbot_queue(LECHBOT_NOTIFS_QUEUE)
+    promise = self.client.basic_consume(queue=AMQ_QUEUE, prefetch_count=1)
+    while True:
+        result = self.client.wait(promise)
+        try:
+            data = json.loads(result["body"])
+            send_time = datetime.strptime(data['time'], "%Y-%m-%d %H:%M:%S")
+            if (datetime.now() - send_time).total_seconds() < 120:
+                yield data
+        except:
+            pass
+        client.basic_ack(result)
+        promise = self.client.basic_consume(queue=AMQ_QUEUE, prefetch_count=1)
 
 
 def pamela():
