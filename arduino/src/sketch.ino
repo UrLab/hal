@@ -25,7 +25,10 @@ Animation animations[] = {
     Animation("heater", 6),
     Animation("kitchen", 7),
     Animation("buzzer", 45, true),
-    Animation("bell_eyes", 13)
+    Animation("bell_eyes", 13),
+    Animation("roof_r", 10),
+    Animation("roof_g", 11),
+    Animation("roof_b", 8)
 };
 
 Sensor sensors[] = {
