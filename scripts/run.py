@@ -1,8 +1,9 @@
 from time import sleep
 from imp import load_source
 from multiprocessing import Process
-from config import get_hal
+from config import get_hal, SENTRY_URL
 from setproctitle import setproctitle
+import raven
 
 logger = get_hal().getLogger()
 
@@ -17,6 +18,8 @@ TO_RUN = [
     "lechbot_notif"
 ]
 
+Sentry = raven.Client(SENTRY_URL)
+
 def wrap_main(name, main):
     def new_main():
         setproctitle("HAL script: " + name)
@@ -26,6 +29,7 @@ def wrap_main(name, main):
                 main()
             except:
                 logger.exception("Restart " + name)
+                Sentry.captureException()
             sleep(60)
     return new_main
 

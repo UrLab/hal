@@ -9,6 +9,8 @@ SENSORS_GRAPHITE = "localhost"
 STATUS_CHANGE_URL = "http://localhost/"
 STATUS_GET_URL = "http://localhost/"
 
+SENTRY_URL = ""
+
 try:
     from local_config import *
 except ImportError:
