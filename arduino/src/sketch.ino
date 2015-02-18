@@ -12,7 +12,9 @@ Trigger triggers[] = {
 Switch switchs[] = {
     Switch("power", 22),
     Switch("leds_stairs", 24),
-    Switch("ampli", 26)
+    Switch("ampli", 26),
+    Switch("belgaleft", 52),
+    Switch("belgaright", 50)
 };
 
 Animation animations[] = {
