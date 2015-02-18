@@ -13,7 +13,8 @@ def main():
             hal.play('door_green')
             logger.info('flash')
             internet.events.send("passage", ["passage"])
-            internet.lechbot_event('passage')
+            if not hal.trig('knife_switch'):
+                internet.lechbot_event('passage')
 
 if __name__ == "__main__":
     main()
