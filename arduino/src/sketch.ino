@@ -28,7 +28,8 @@ Animation animations[] = {
     Animation("bell_eyes", 13),
     Animation("roof_r", 10),
     Animation("roof_g", 11),
-    Animation("roof_b", 8)
+    Animation("roof_b", 8),
+    Animation("belgatop", 9)
 };
 
 Sensor sensors[] = {
