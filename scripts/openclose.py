@@ -6,6 +6,7 @@ from time import sleep
 hal = get_hal()
 log = hal.getLogger(__name__)
 
+
 def open_hs(called_on_trigger):
     log.info("OPEN the hackerspace")
     for anim in ("red", "green", "blue", "kitchen"):
@@ -26,6 +27,7 @@ def open_hs(called_on_trigger):
         internet.spaceapi_open()
         internet.events.send('hs_open', ["open", "status"])
 
+
 def close_hs(called_on_trigger):
     log.info("CLOSE the hackerspace")
     if called_on_trigger:
@@ -33,10 +35,10 @@ def close_hs(called_on_trigger):
 
     hal.off("ampli")
     # Shotdown all leds
-    for anim in ("red", "green", "blue", "heater", "door_green", "kitchen"):
+    for anim in ("red", "green", "blue", "heater", "door_green", "kitchen", "roof_g", "roof_b", "roof_r"):
         hal.stop(anim)
         sleep(0.0001)
-    
+
     if called_on_trigger and internet.spaceapi_isopen():
         illuminate_stairs()
         internet.spaceapi_close()

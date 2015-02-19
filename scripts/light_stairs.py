@@ -6,10 +6,13 @@ import signal
 hal = get_hal()
 logger = hal.getLogger(__name__)
 
+BERNARD = ("green", "roof_g", "roof_b", "roof_r")
+
 
 def stop_illuminate_stairs(*args, **kwargs):
     if not hal.trig('knife_switch'):
-        hal.stop("green")
+        for anim in BERNARD:
+            hal.stop(anim)
         hal.off("leds_stairs")
         hal.off("power")
         logger.info("Put off light in stairs")
@@ -20,8 +23,10 @@ def illuminate_stairs(dt=90):
     for anim in ("red", "heater", "blue", "door_green"):
         hal.stop(anim)
 
-    hal.upload("green", chr(0xff))
-    hal.play("green")
+    for anim in BERNARD:
+        hal.upload(anim, chr(0xff))
+        hal.play(anim)
+
     hal.on("leds_stairs")
     hal.on("power")
 
@@ -30,6 +35,7 @@ def illuminate_stairs(dt=90):
 
 
 last_trig = 0
+
 
 def main():
     global last_trig
