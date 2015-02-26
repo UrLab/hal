@@ -14,7 +14,10 @@ Switch switchs[] = {
     Switch("leds_stairs", 24),
     Switch("ampli", 26),
     Switch("belgaleft", 52),
-    Switch("belgaright", 50)
+    Switch("belgaright", 50),
+    Switch("knife_r", 23),
+    Switch("knife_g", 25),
+    Switch("knife_b", 27)
 };
 
 Animation animations[] = {
