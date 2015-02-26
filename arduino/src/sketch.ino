@@ -14,7 +14,10 @@ Switch switchs[] = {
     Switch("leds_stairs", 24),
     Switch("ampli", 26),
     Switch("belgaleft", 52),
-    Switch("belgaright", 50)
+    Switch("belgaright", 50),
+    Switch("knife_r", 23),
+    Switch("knife_g", 25),
+    Switch("knife_b", 27)
 };
 
 Animation animations[] = {
@@ -28,7 +31,8 @@ Animation animations[] = {
     Animation("bell_eyes", 13),
     Animation("roof_r", 10),
     Animation("roof_g", 11),
-    Animation("roof_b", 8)
+    Animation("roof_b", 8),
+    Animation("belgatop", 9)
 };
 
 Sensor sensors[] = {
