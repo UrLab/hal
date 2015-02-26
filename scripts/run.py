@@ -47,4 +47,6 @@ try:
 
     map(Process.join, processes)
 except:
+    logger.exception("Cannot spawn processes")
+    Sentry.captureException()
     map(Process.terminate, processes)
