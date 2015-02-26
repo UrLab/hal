@@ -3,12 +3,13 @@ from imp import load_source
 from multiprocessing import Process
 from config import get_hal, SENTRY_URL
 from setproctitle import setproctitle
+import traceback
 import raven
 
 logger = get_hal().getLogger()
 
 TO_RUN = [
-    "graphite",
+#    "graphite",
     "openclose", 
     "light_stairs", 
     "bell", 
