@@ -36,7 +36,13 @@ def main():
 
         for name in BLINK:
             hal.fps(name, fps[name])
+        
+        # Reupload fixed light
         hal.upload('bell_eyes', [255])
+
+        # If the hackerspace is closed, dont light eyes
+        if not hal.trig('knife_switch'):
+            hal.stop('bell_eyes')
 
 if __name__ == "__main__":
     main()
