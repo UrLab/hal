@@ -6,7 +6,7 @@ import signal
 hal = get_hal()
 logger = hal.getLogger(__name__)
 
-BERNARD = ("green", "roof_g", "roof_b", "roof_r")
+BERNARD = ("green", "roof_g", "roof_b", "roof_r", "belgatop")
 
 
 def stop_illuminate_stairs(*args, **kwargs):
@@ -15,6 +15,9 @@ def stop_illuminate_stairs(*args, **kwargs):
             hal.stop(anim)
         hal.off("leds_stairs")
         hal.off("power")
+        hal.off("knife_r")
+        hal.off("knife_g")
+        hal.off("knife_b")
         logger.info("Put off light in stairs")
 
 
@@ -45,6 +48,9 @@ def main():
         if door_open and not knife_on and time() - last_trig > 60:
             last_trig = time()
             illuminate_stairs()
+            hal.on("knife_b")
+            hal.off("knife_g")
+            hal.off("knife_r")
             internet.lechbot_event('door_stairs')
             internet.events.send('door_stairs', ["door_stairs"])
 

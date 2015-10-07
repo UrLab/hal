@@ -1,6 +1,7 @@
-import hal
+from config import get_hal
 import internet
 
+hal = get_hal()
 logger = hal.getLogger(__name__)
 
 def main():
