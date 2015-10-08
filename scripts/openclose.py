@@ -25,8 +25,6 @@ def open_hs(called_on_trigger):
     hal.off("knife_r")
     hal.off("knife_b")
     hal.on("knife_g")
-    
-    os.system("mpc play")
 
     if called_on_trigger and not internet.spaceapi_isopen():
         internet.lechbot_event('hs_open')
