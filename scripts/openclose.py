@@ -2,6 +2,7 @@ from config import get_hal
 import internet
 from light_stairs import illuminate_stairs
 from time import sleep
+import os
 
 hal = get_hal()
 log = hal.getLogger(__name__)
@@ -24,6 +25,8 @@ def open_hs(called_on_trigger):
     hal.off("knife_r")
     hal.off("knife_b")
     hal.on("knife_g")
+    
+    os.system("mpc play")
 
     if called_on_trigger and not internet.spaceapi_isopen():
         internet.lechbot_event('hs_open')
@@ -36,6 +39,8 @@ def close_hs(called_on_trigger):
     if called_on_trigger:
         internet.lechbot_event('hs_close')
 
+    os.system("mpc pause")
+    
     hal.off("ampli")
     hal.on("knife_r")
     hal.off("knife_b")
