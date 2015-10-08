@@ -9,14 +9,15 @@ import raven
 logger = get_hal().getLogger()
 
 TO_RUN = [
-#    "graphite",
+    "graphite",
     "openclose", 
     "light_stairs", 
     "bell", 
     "heatled", 
     "redled",
     "door_flash",
-    "lechbot_notif"
+    "lechbot_notif",
+    "mpd_buttons",
 ]
 
 Sentry = raven.Client(SENTRY_URL)
