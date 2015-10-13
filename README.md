@@ -4,7 +4,7 @@ and interacts with the Hackerspace crew.
 
 # Overall architecture
 
-![Architecture diagram](archdiagram.svg)
+![Architecture diagram](archdiagram.png)
 
 # Setup
 
