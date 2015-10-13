@@ -18,6 +18,7 @@ def open_hs(called_on_trigger):
         sleep(0.0001)
 
     hal.upload("bell_eyes", [255])
+    hal.play("bell_eyes")
     hal.one_shot("door_green")
     hal.play("heater")
     for switch in ("power", "leds_stairs", "ampli", "belgaleft", "belgaright"):
@@ -62,7 +63,7 @@ def close_hs(called_on_trigger):
             sleep(1)
 
 
-    hal.upload("bell_eyes", [0])
+    hal.stop("bell_eyes")
 
 
 def main():
