@@ -1,12 +1,22 @@
-HAL (Heuristically programmed ALgorithmic computer) is a sentient computer 
-(or artificial intelligence) that controls the systems of the UrLab spacecraft 
-and interacts with the Hackerspace crew.
+**HAL (Heuristically programmed ALgorithmic computer)** is a sentient computer (or artificial intelligence) that controls the systems of the UrLab spacecraft and interacts with the Hackerspace crew.
 
 # Overall architecture
 
+HAL is made of 3 main components. An arduino library implementing access to various actuators and sensors, mainloop and serial communication. A Linux (probably also *BSD/Mac) driver to access the sensors and actuators with any user on the filesystem. Finally, a Python hilevel API to wrap all the boilerplate filesystem access code.
+
+In order to build your own HAL, you need at least the arduino library and an arduino sketch that use it, and the driver.
+
 ![Architecture diagram](archdiagram.png)
 
+* [hal-arduino](https://github.com/urlab.hal-arduino) is the arduino library
+* [hal-driver](https://github.com/urlab/hal-driver) is a FUSE (FileSystem in USerspace) driver to expose arduino sensors and actuators on the filesystem
+* [halpy](https://github.com/urlab.halpy) is a high level python API
+
+This repo package all this components together, along with the arduino sketch and scripts that are specific to UrLab.
+
 # Setup
+
+In order to use this particular repo:
 
 	$ git submodule init && git submodule update
 	$ sudo apt-get install arduino-core libfuse-dev
@@ -15,13 +25,13 @@ and interacts with the Hackerspace crew.
 	$ pip install -r requirements.txt
 	$ pushd halpy && python setup.py develop && popd
 
-# Compile driver & upload Arduino code
+## Compile driver & upload Arduino code
 	
 	$ make
 
 # TODO
 
-* Actual Git version (for driver && arduino); not an arbitrary string
+* HAL-Arduino should return its actual Git version; not an arbitrary string
 * More security check (bound checking, syscall return values, ...)
 
 # Usage
