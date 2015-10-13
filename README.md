@@ -2,6 +2,10 @@ HAL (Heuristically programmed ALgorithmic computer) is a sentient computer
 (or artificial intelligence) that controls the systems of the UrLab spacecraft 
 and interacts with the Hackerspace crew.
 
+# Overall architecture
+
+![Architecture diagram](archdiagram.svg)
+
 # Setup
 
 	$ git submodule init && git submodule update
