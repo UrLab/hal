@@ -9,6 +9,11 @@ TIMEFMT = '%Y-%m-%d %H:%M:%S'
 
 
 @asyncio.coroutine
+def rmq_error_callback(exc):
+    print("Error when connecting to RabbitMQ:", exc)
+
+
+@asyncio.coroutine
 def lechbot_notif_consume(coroutine):
     @asyncio.coroutine
     def connect_error(exc):
@@ -17,7 +22,7 @@ def lechbot_notif_consume(coroutine):
     try:
         transport, protocol = yield from aioamqp.connect(
             host=RMQ_HOST, login=RMQ_USER, password=RMQ_PASSWORD,
-            on_error=error_callback)
+            on_error=rmq_error_callback)
         channel = yield from protocol.channel()
         queue = yield from channel.queue_declare(LECHBOT_NOTIFS_QUEUE)
 
@@ -45,10 +50,10 @@ def lechbot_event(event_name):
     try:
         transport, protocol = yield from aioamqp.connect(
             host=RMQ_HOST, login=RMQ_USER, password=RMQ_PASSWORD,
-            on_error=error_callback)
+            on_error=rmq_error_callback)
         channel = yield from protocol.channel()
         queue = yield from channel.queue_declare(LECHBOT_EVENTS_QUEUE)
-        msg = {'time': datetime.now().strftime(TIMEFMT), 'name': name}
+        msg = {'time': datetime.now().strftime(TIMEFMT), 'name': event_name}
         yield from channel.publish(json.dumps(msg), '', LECHBOT_EVENTS_QUEUE)
     except aioamqp.AmqpClosedConnection:
         print("closed connections")
