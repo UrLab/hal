@@ -1,4 +1,5 @@
 import asyncio
+from asyncio import subprocess
 from halpy import HAL
 from halpy.generators import sinusoid, Partition, Note, Silence
 from internet import lechbot_notif_consume, lechbot_event
@@ -18,6 +19,32 @@ trashmusic = Partition(
         Note(262, 2))
 
 hal = HAL(HALFS_ROOT)
+
+
+class SafeBuzzer():
+    """
+    Buzzer and roof red ledstrip could not be on at the same time
+    (hardware limitation).
+    """
+    def __enter__(self):
+        self.red_playing = hal.animations.roof_r.playing
+        if self.red_playing:
+            hal.animations.roof_r.playing = False
+        return hal.animations.buzzer
+
+    def __exit__(self, *args, **kwargs):
+        if self.red_playing:
+            hal.animations.roof_r.playing = True
+
+
+@asyncio.coroutine
+def execute_command(*args):
+    proc = yield from asyncio.create_subprocess_exec(
+        *args,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    stdout, _ = yield from proc.communicate()
+    exit_code = yield from proc.wait()
+    return exit_code
 
 
 def set_urlab_open():
@@ -64,36 +91,30 @@ def heater_changed(name, state):
 @hal.on_trigger('bell', True)
 def bell_pressed(name, state):
     # Play Funky town on the buzzer
-    buzzer = hal.animations.buzzer
-    buzzer.looping = False
-    buzzer.upload(funkytown.to_frames()*2)
-    buzzer.fps = 20
+    with SafeBuzzer() as buz:
+        buz.looping = False
+        buz.upload(funkytown.to_frames()*2)
+        buz.fps = 20
 
-    # Upload glow to the space invader eyes
-    hal.animations.bell_eyes.upload(sinusoid(100))
+        # Upload glow to the space invader eyes
+        hal.animations.bell_eyes.upload(sinusoid(100))
 
-    # Make animations much faster for 5 seconds
-    original_fps = {}
-    for a in ['bell_eyes', 'red', 'blue', 'green']:
-        original_fps[a] = hal.animations[a].fps
-        hal.animations[a].fps = 200
+        # Make animations much faster for 5 seconds
+        original_fps = {}
+        for a in ['bell_eyes', 'red', 'blue', 'green']:
+            original_fps[a] = hal.animations[a].fps
+            hal.animations[a].fps = 200
 
-    roof_r_was_playing = hal.animations.roof_r.playing
-    hal.animations.roof_r.playing = False
+        buz.playing = True
 
-    buzzer.playing = True
+        yield from lechbot_event('bell')
+        yield from asyncio.sleep(7)
 
-    yield from lechbot_event('bell')
-    yield from asyncio.sleep(7)
-
-    if roof_r_was_playing:
-        hal.animations.roof_r.playing = True
-
-    # Restore original animations
-    for a, fps in original_fps.items():
-        hal.animations[a].fps = fps
-    if hal.triggers.knife_switch.on:
-        hal.animations.bell_eyes.upload([1.0])
+        # Restore original animations
+        for a, fps in original_fps.items():
+            hal.animations[a].fps = fps
+        if hal.triggers.knife_switch.on:
+            hal.animations.bell_eyes.upload([1.0])
 
 
 @hal.on_trigger('knife_switch', True)
@@ -105,6 +126,7 @@ def open_urlab(*args):
 
 @hal.on_trigger('knife_switch', False)
 def close_urlab(*args):
+    yield from execute_command('mpc', 'pause')
     set_urlab_closed(
         switchs_on=['power', 'leds_stairs', 'knife_r'],
         anims_fixed=['green', 'roof_r'])
@@ -119,13 +141,13 @@ def close_urlab(*args):
 
 @hal.on_trigger('passage', True)
 def passage(*args):
-    flash = hal.animations.door_green
-    flash.looping = False
-    flash.upload(sinusoid(100)[:75])
-    flash.playing = True
-    flash.fps = 150
-
-    if not hal.triggers.knife_switch.on:
+    if hal.triggers.knife_switch.on:
+        flash = hal.animations.door_green
+        flash.looping = False
+        flash.upload(sinusoid(100)[:75])
+        flash.playing = True
+        flash.fps = 150
+    else:
         yield from lechbot_event('passage')
 
 
@@ -141,22 +163,43 @@ def passage_stairs(*args):
     hal.animations.green.playing = True
     hal.switchs.knife_b.on = True
 
+    yield from lechbot_event('door_stairs')
     yield from asyncio.sleep(LIGHT_TIMEOUT)
     hal.switchs.knife_b.on = False
-    
+
     if not hal.triggers.knife_switch.on:
         hal.switchs.power.on = False
         hal.switchs.leds_stairs.on = False
         hal.animations.green.looping = False
 
 
+@hal.on_trigger('button_play', True)
+def toggle_mpd_play(*args):
+    # mpc toggle
+    yield from execute_command('mpc', 'toggle')
+
+
+@hal.on_trigger('button_up', True)
+def increase_mpd_volume(*args):
+    # mpc volume +5
+    yield from execute_command('mpc', 'volume', '+5')
+
+
+@hal.on_trigger('button_down', True)
+def decrease_mpd_volume(*args):
+    # mpc volume -5
+    yield from execute_command('mpc', 'volume', '-5')
+
+
+@asyncio.coroutine
 def on_lechbot_notif(notif_name):
     if notif_name == 'trash':
-        buzzer = hal.animations.buzzer
-        buzzer.looping = False
-        buzzer.upload(trashmusic.to_frames())
-        buzzer.fps = 17
-        buzzer.playing = True
+        with SafeBuzzer() as buz:
+            buz.looping = False
+            buz.upload(trashmusic.to_frames())
+            buz.fps = 17
+            buz.playing = True
+            yield from asyncio.sleep(10)
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()

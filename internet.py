@@ -1,6 +1,7 @@
 import asyncio
 import aioamqp
 import json
+import traceback
 from datetime import datetime
 from config import RMQ_HOST, RMQ_USER, RMQ_PASSWORD
 from config import LECHBOT_EVENTS_QUEUE, LECHBOT_NOTIFS_QUEUE
@@ -28,18 +29,21 @@ def lechbot_notif_consume(coroutine):
 
         @asyncio.coroutine
         def consume(body, envelope, properties):
+            print("Consuming from queue ! => ", body)
             yield from channel.basic_client_ack(envelope.delivery_tag)
             try:
-                msg = json.loads(body)
+                msg = json.loads(body.decode())
                 now = datetime.now()
                 msgtime = datetime.strptime(
                     msg.get('time', now.strftime(TIMEFMT)), TIMEFMT)
                 if (now - msgtime).total_seconds() < 120:
                     yield from coroutine(msg['name'])
             except:
-                pass
+                traceback.print_exc()
 
-        yield from channel.basic_consume(LECHBOT_NOTIFS_QUEUE, callback=consume)
+        print("Register consumer with", coroutine)
+        while True:
+            yield from channel.basic_consume(LECHBOT_NOTIFS_QUEUE, callback=consume)
     except aioamqp.AmqpClosedConnection:
         print("closed connections")
         return
