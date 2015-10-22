@@ -210,7 +210,15 @@ def on_lechbot_notif(notif_name):
             buz.playing = True
             yield from asyncio.sleep(10)
 
+
 if __name__ == "__main__":
+    if hal.triggers.knife_switch.on:
+        print("Hackerspace is opened")
+        set_urlab_open()
+    else:
+        print("Hackerspace is closed")
+        set_urlab_closed()
+
     loop = asyncio.get_event_loop()
     asyncio.async(lechbot_notif_consume(on_lechbot_notif))
     hal.run(loop)
