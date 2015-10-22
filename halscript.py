@@ -20,6 +20,41 @@ trashmusic = Partition(
 hal = HAL(HALFS_ROOT)
 
 
+def set_urlab_open():
+    for sw in ['power', 'ampli', 'knife_g', 'leds_stairs']:
+        hal.switchs[sw].on = True
+
+    for sw in ['knife_r', 'knife_b']:
+        hal.switchs[sw].on = False
+
+    # Put fixed animations on
+    for a in ['bell_eyes', 'roof_r', 'roof_g', 'roof_b']:
+        hal.animations[a].upload([1.0])
+        hal.animations[a].playing = True
+        hal.animations[a].looping = True
+
+    # Start glowing ledstrips
+    for a in ['belgatop', 'blue', 'green', 'heater', 'kitchen', 'red']:
+        anim = hal.animations[a]
+        anim.upload(sinusoid())
+        anim.fps = 40
+        anim.looping = True
+        anim.playing = True
+
+
+def set_urlab_closed(switchs_on=[], anims_fixed=[]):
+    for sw in hal.switchs.values():
+        sw.on = sw.name in switchs_on
+
+    for anim in hal.animations.values():
+        if anim.name not in anims_fixed:
+            anim.playing = False
+        else:
+            anim.upload([1.0])
+            anim.looping = True
+            anim.playing = True
+
+
 @hal.on_trigger('heater')
 def heater_changed(name, state):
     # light or shut down the heater ledstrip according to the valve
@@ -31,9 +66,8 @@ def bell_pressed(name, state):
     # Play Funky town on the buzzer
     buzzer = hal.animations.buzzer
     buzzer.looping = False
-    buzzer.upload(funkytown)
-    buzzer.fps = 17
-    buzzer.playing = True
+    buzzer.upload(funkytown.to_frames()*2)
+    buzzer.fps = 20
 
     # Upload glow to the space invader eyes
     hal.animations.bell_eyes.upload(sinusoid(100))
@@ -44,8 +78,16 @@ def bell_pressed(name, state):
         original_fps[a] = hal.animations[a].fps
         hal.animations[a].fps = 200
 
+    roof_r_was_playing = hal.animations.roof_r.playing
+    hal.animations.roof_r.playing = False
+
+    buzzer.playing = True
+
     yield from lechbot_event('bell')
-    yield from asyncio.sleep(5)
+    yield from asyncio.sleep(7)
+
+    if roof_r_was_playing:
+        hal.animations.roof_r.playing = True
 
     # Restore original animations
     for a, fps in original_fps.items():
@@ -56,44 +98,16 @@ def bell_pressed(name, state):
 
 @hal.on_trigger('knife_switch', True)
 def open_urlab(*args):
-    for sw in ['power', 'ampli', 'knife_g', 'leds_stairs']:
-        hal.switchs[sw].on = True
-
-    for sw in ['knife_r', 'knife_b']:
-        hal.switchs[sw].on = False
-
-    # Put eyes on
-    hal.animations.bell_eyes.upload([1.0])
-
-    # Start glowing ledstrips
-    for a in ['belgatop', 'blue', 'green', 'heater', 'kitchen', 'red']:
-        anim = hal.animations[a]
-        anim.upload(sinusoid())
-        anim.fps = 40
-        anim.looping = True
-        anim.playing = True
-        yield from asyncio.sleep(0.01)
-
+    set_urlab_open()
     heater_changed('heater', hal.triggers.heater.on)
     yield from lechbot_event('hs_open')
 
 
 @hal.on_trigger('knife_switch', False)
 def close_urlab(*args):
-    for sw in ['knife_r']:
-        hal.switchs[sw].on = True
-
-    for sw in ['ampli', 'knife_g', 'knife_b']:
-        hal.switchs[sw].on = False
-
-    # Keep light inside to easily close UrLab
-    for a in ['green', 'roof_r', 'roof_g', 'roof_b']:
-        anim = hal.animations[a]
-        anim.upload([1.0])
-
-    # Stop all other lights
-    for a in ['belgatop', 'blue', 'heater', 'kitchen', 'red']:
-        hal.animations[a].playing = False
+    set_urlab_closed(
+        switchs_on=['power', 'leds_stairs', 'knife_r'],
+        anims_fixed=['green', 'roof_r'])
 
     yield from lechbot_event('hs_close')
     yield from asyncio.sleep(LIGHT_TIMEOUT)
@@ -140,7 +154,7 @@ def on_lechbot_notif(notif_name):
     if notif_name == 'trash':
         buzzer = hal.animations.buzzer
         buzzer.looping = False
-        buzzer.upload(trashmusic)
+        buzzer.upload(trashmusic.to_frames())
         buzzer.fps = 17
         buzzer.playing = True
 
