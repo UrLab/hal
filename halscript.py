@@ -1,9 +1,10 @@
 import asyncio
+import aiohttp
 from asyncio import subprocess
 from halpy import HAL
 from halpy.generators import sinusoid, Partition, Note, Silence
 from internet import lechbot_notif_consume, lechbot_event
-from config import HALFS_ROOT
+from config import HALFS_ROOT, STATUS_CHANGE_URL
 
 LIGHT_TIMEOUT = 60  # Seconds of light when passage or closing UrLab
 
@@ -122,6 +123,10 @@ def open_urlab(*args):
     set_urlab_open()
     heater_changed('heater', hal.triggers.heater.on)
     yield from lechbot_event('hs_open')
+    try:
+        yield from aiohttp.request('GET', STATUS_CHANGE_URL + "?status=open")
+    except:
+        pass
 
 
 @hal.on_trigger('knife_switch', False)
@@ -132,6 +137,10 @@ def close_urlab(*args):
         anims_fixed=['green', 'roof_r'])
 
     yield from lechbot_event('hs_close')
+    try:
+        yield from aiohttp.request('GET', STATUS_CHANGE_URL + "?status=close")
+    except:
+        pass
     yield from asyncio.sleep(LIGHT_TIMEOUT)
 
     # If the hackerspace is still closed, cut power
