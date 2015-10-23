@@ -225,6 +225,7 @@ def hal_periodic_tasks():
         color = len(pamela_data.get('color', []))
         grey = len(pamela_data.get('grey', []))
         hal.animations.red.fps = 25 * log(2 + color + grey)
+        print(datetime.now(), "Set fps to", 25 * log(2 + color + grey))
         yield from asyncio.sleep(15)
 
 if __name__ == "__main__":
