@@ -1,10 +1,14 @@
 import asyncio
 import aiohttp
 from asyncio import subprocess
+from math import log
+import json
+
 from halpy import HAL
 from halpy.generators import sinusoid, Partition, Note, Silence
 from internet import lechbot_notif_consume, lechbot_event
-from config import HALFS_ROOT, STATUS_CHANGE_URL
+from config import HALFS_ROOT, STATUS_CHANGE_URL, PAMELA_URL
+
 
 LIGHT_TIMEOUT = 60  # Seconds of light when passage or closing UrLab
 
@@ -118,15 +122,21 @@ def bell_pressed(name, state):
             hal.animations.bell_eyes.upload([1.0])
 
 
+@hal.on_trigger('knife_switch')
+def change_status_lechbot(trigger, state):
+    event = 'hs_open' if state else 'hs_close'
+    yield from lechbot_event(event)
+
+
+@hal.on_trigger('knife_switch')
+def change_status_spaceapi(trigger, state):
+    status = "open" if state else "close"
+    yield from aiohttp.request('GET', STATUS_CHANGE_URL + "?status=" + status)
+
+
 @hal.on_trigger('knife_switch', True)
 def open_urlab(*args):
     set_urlab_open()
-    heater_changed('heater', hal.triggers.heater.on)
-    yield from lechbot_event('hs_open')
-    try:
-        yield from aiohttp.request('GET', STATUS_CHANGE_URL + "?status=open")
-    except:
-        pass
 
 
 @hal.on_trigger('knife_switch', False)
@@ -135,12 +145,6 @@ def close_urlab(*args):
     set_urlab_closed(
         switchs_on=['power', 'leds_stairs', 'knife_r'],
         anims_fixed=['green', 'roof_r'])
-
-    yield from lechbot_event('hs_close')
-    try:
-        yield from aiohttp.request('GET', STATUS_CHANGE_URL + "?status=close")
-    except:
-        pass
     yield from asyncio.sleep(LIGHT_TIMEOUT)
 
     # If the hackerspace is still closed, cut power
@@ -211,6 +215,18 @@ def on_lechbot_notif(notif_name):
             yield from asyncio.sleep(10)
 
 
+@asyncio.coroutine
+def hal_periodic_tasks():
+    while True:
+        # Red ledstrip frequency follow the number of people in the space
+        response = yield from aiohttp.request('GET', PAMELA_URL)
+        content = yield from response.content.read()
+        pamela_data = json.loads(content.decode())
+        color = len(pamela_data.get('color', []))
+        grey = len(pamela_data.get('grey', []))
+        hal.animations.red.fps = 25 * log(2 + color + grey)
+        yield from asyncio.sleep(15)
+
 if __name__ == "__main__":
     if hal.triggers.knife_switch.on:
         print("Hackerspace is opened")
@@ -221,4 +237,5 @@ if __name__ == "__main__":
 
     loop = asyncio.get_event_loop()
     asyncio.async(lechbot_notif_consume(on_lechbot_notif))
+    asyncio.async(hal_periodic_tasks())
     hal.run(loop)

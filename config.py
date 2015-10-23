@@ -12,6 +12,8 @@ SENSORS_GRAPHITE = "localhost"
 STATUS_CHANGE_URL = "http://localhost/"
 STATUS_GET_URL = "http://localhost/"
 
+PAMELA_URL = "http://localhost/mac.json"
+
 SENTRY_URL = ""
 
 try:
