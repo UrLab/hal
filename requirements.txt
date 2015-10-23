@@ -1,4 +1,4 @@
 git+https://github.com/UrLab/halpy.git
-aioampq
+aioamqp
 aiohttp
 ipython
