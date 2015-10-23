@@ -16,10 +16,6 @@ def rmq_error_callback(exc):
 
 @asyncio.coroutine
 def lechbot_notif_consume(coroutine):
-    @asyncio.coroutine
-    def connect_error(exc):
-        print("!!! Error when connection to RabbitMQ:", exc)
-
     try:
         transport, protocol = yield from aioamqp.connect(
             host=RMQ_HOST, login=RMQ_USER, password=RMQ_PASSWORD,
@@ -29,7 +25,6 @@ def lechbot_notif_consume(coroutine):
 
         @asyncio.coroutine
         def consume(body, envelope, properties):
-            print("Consuming from queue ! => ", body)
             yield from channel.basic_client_ack(envelope.delivery_tag)
             try:
                 msg = json.loads(body.decode())
@@ -41,9 +36,7 @@ def lechbot_notif_consume(coroutine):
             except:
                 traceback.print_exc()
 
-        print("Register consumer with", coroutine)
-        while True:
-            yield from channel.basic_consume(LECHBOT_NOTIFS_QUEUE, callback=consume)
+        yield from channel.basic_consume(LECHBOT_NOTIFS_QUEUE, callback=consume)
     except aioamqp.AmqpClosedConnection:
         print("closed connections")
         return
