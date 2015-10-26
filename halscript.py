@@ -244,6 +244,18 @@ def hal_periodic_tasks():
         yield from asyncio.sleep(15)
 
 
+@asyncio.coroutine
+def blinking_eyes():
+    left = False
+    while True:
+        delay = 2 ** hal.sensors.light_inside.value
+        print("Delay", delay)
+        for i in range(30):
+            hal.switchs.belgaleft.on = left
+            hal.switchs.belgaright.on = not left
+            left = not left
+            yield from asyncio.sleep(delay)
+
 if __name__ == "__main__":
     if hal.triggers.knife_switch.on:
         print("Hackerspace is opened")
@@ -255,4 +267,5 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     asyncio.async(lechbot_notif_consume(on_lechbot_notif))
     asyncio.async(hal_periodic_tasks())
+    asyncio.async(blinking_eyes())
     hal.run(loop)
