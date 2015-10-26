@@ -236,12 +236,12 @@ def set_red_fps():
 
 
 @asyncio.coroutine
-def hal_periodic_tasks():
+def hal_periodic_tasks(period_seconds=15):
     while True:
         yield from set_red_fps()
         temp_heater = hal.sensors.temp_radiator.value
         hal.animations.heater.upload(sinusoid(val_max=temp_heater))
-        yield from asyncio.sleep(15)
+        yield from asyncio.sleep(period_seconds)
 
 
 @asyncio.coroutine
@@ -256,7 +256,8 @@ def blinking_eyes():
             left = not left
             yield from asyncio.sleep(delay)
 
-if __name__ == "__main__":
+
+def main():
     if hal.triggers.knife_switch.on:
         print("Hackerspace is opened")
         set_urlab_open()
@@ -266,6 +267,9 @@ if __name__ == "__main__":
 
     loop = asyncio.get_event_loop()
     asyncio.async(lechbot_notif_consume(on_lechbot_notif))
-    asyncio.async(hal_periodic_tasks())
+    asyncio.async(hal_periodic_tasks(15))
     asyncio.async(blinking_eyes())
     hal.run(loop)
+
+if __name__ == "__main__":
+    main()
