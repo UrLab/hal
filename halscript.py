@@ -148,11 +148,12 @@ def change_status_spaceapi(trigger, state):
 @hal.on_trigger('knife_switch', True)
 def open_urlab(*args):
     set_urlab_open()
-    buzzer = hal.animations.buzzer
-    buzzer.looping = False
-    buzzer.fps = 30
-    buzzer.upload(openmusic.to_frames())
-    buzzer.playing = True
+    with SafeBuzzer() as buz:
+        buz.looping = False
+        buz.fps = 30
+        buz.upload(openmusic.to_frames())
+        buz.playing = True
+        yield from asyncio.sleep(3)
 
 
 @hal.on_trigger('knife_switch', False)
