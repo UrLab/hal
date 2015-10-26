@@ -222,12 +222,13 @@ def set_red_fps():
         # Red ledstrip frequency follow the number of people in the space
         response = yield from aiohttp.request('GET', PAMELA_URL)
         content = yield from response.content.read()
+        response.release()
+
         pamela_data = json.loads(content.decode())
         color = len(pamela_data.get('color', []))
         grey = len(pamela_data.get('grey', []))
         hal.animations.red.fps = 25 * log(2 + color + grey)
         print(datetime.now(), "Set fps to", 25 * log(2 + color + grey))
-        yield from asyncio.sleep(15)
     except Exception as err:
         print("Error in Pamela/Red:", err)
 
@@ -236,6 +237,9 @@ def set_red_fps():
 def hal_periodic_tasks():
     while True:
         yield from set_red_fps()
+        temp_heater = hal.sensors.temp_radiator.value
+        hal.animations.heater.upload(sinusoid(val_max=temp_heater))
+        yield from asyncio.sleep(15)
 
 
 if __name__ == "__main__":
