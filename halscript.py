@@ -217,8 +217,8 @@ def on_lechbot_notif(notif_name):
 
 
 @asyncio.coroutine
-def hal_periodic_tasks():
-    while True:
+def set_red_fps():
+    try:
         # Red ledstrip frequency follow the number of people in the space
         response = yield from aiohttp.request('GET', PAMELA_URL)
         content = yield from response.content.read()
@@ -228,6 +228,15 @@ def hal_periodic_tasks():
         hal.animations.red.fps = 25 * log(2 + color + grey)
         print(datetime.now(), "Set fps to", 25 * log(2 + color + grey))
         yield from asyncio.sleep(15)
+    except Exception as err:
+        print("Error in Pamela/Red:", err)
+
+
+@asyncio.coroutine
+def hal_periodic_tasks():
+    while True:
+        yield from set_red_fps()
+
 
 if __name__ == "__main__":
     if hal.triggers.knife_switch.on:
