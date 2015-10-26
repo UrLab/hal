@@ -74,6 +74,8 @@ def set_urlab_open():
         anim.looping = True
         anim.playing = True
 
+    heater_changed('heater', hal.triggers.heater.on)
+
 
 def set_urlab_closed(switchs_on=[], anims_fixed=[]):
     for sw in hal.switchs.values():
@@ -91,7 +93,7 @@ def set_urlab_closed(switchs_on=[], anims_fixed=[]):
 @hal.on_trigger('heater')
 def heater_changed(name, state):
     # light or shut down the heater ledstrip according to the valve
-    hal.animations.heater.play = state
+    hal.animations.heater.playing = state
 
 
 @hal.on_trigger('bell', True)
