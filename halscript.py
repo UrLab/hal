@@ -24,6 +24,9 @@ trashmusic = Partition(
         Note(392), Note(392, 0.5), Note(330, 0.5), Note(262), Note(247), Note(262),
         Note(262, 2))
 
+openmusic = Partition(
+    Note(523), Note(659), Note(784), Note(1046, 2), Note(784), Note(1046, 2))
+
 hal = HAL(HALFS_ROOT)
 
 
@@ -140,6 +143,11 @@ def change_status_spaceapi(trigger, state):
 @hal.on_trigger('knife_switch', True)
 def open_urlab(*args):
     set_urlab_open()
+    buzzer = hal.animations.buzzer
+    buzzer.looping = False
+    buzzer.fps = 30
+    buzzer.upload(openmusic.to_frames())
+    buzzer.playing = True
 
 
 @hal.on_trigger('knife_switch', False)
