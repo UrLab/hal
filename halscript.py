@@ -27,6 +27,11 @@ trashmusic = Partition(
 openmusic = Partition(
     Note(523), Note(659), Note(784), Note(1046, 2), Note(784), Note(1046, 2))
 
+pokemusic = Partition(
+    Note(440), Note(415), Note(440), Note(493), Note(523), Note(587), Note(659),
+    Note(440), Note(493), Note(523), Note(587), Note(659), Note(698), Note(659),
+    Note(698), Note(783), Note(880), Note(698), Note(659, 3))
+
 hal = HAL(HALFS_ROOT)
 
 
@@ -222,6 +227,13 @@ def on_lechbot_notif(notif_name):
             buz.looping = False
             buz.upload(trashmusic.to_frames())
             buz.fps = 17
+            buz.playing = True
+            yield from asyncio.sleep(10)
+    elif notif_name == 'poke':
+        with SafeBuzzer() as buz:
+            buz.looping = False
+            buz.upload(pokemusic.to_frames())
+            buz.fps = 30
             buz.playing = True
             yield from asyncio.sleep(10)
 
