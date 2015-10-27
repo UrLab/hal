@@ -181,6 +181,12 @@ def passage(*args):
         yield from lechbot_event('passage')
 
 
+@hal.on_trigger('kitchen_move', True)
+def passage_kitchen(*args):
+    if not hal.triggers.knife_switch.on:
+        yield from lechbot_event('kitchen_move')
+
+
 @hal.on_trigger('door_stairs', True)
 def passage_stairs(*args):
     if hal.triggers.knife_switch.on:
