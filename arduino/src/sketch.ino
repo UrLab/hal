@@ -9,7 +9,8 @@ Trigger triggers[] = {
     Trigger("heater", 47, LOW),
     Trigger("button_up", 43, HIGH),
     Trigger("button_down", 41, HIGH),
-    Trigger("button_play", 39, HIGH)
+    Trigger("button_play", 39, HIGH),
+    Trigger("kitchen_move", 31, HIGH, 5000)
 };
 
 Switch switchs[] = {
