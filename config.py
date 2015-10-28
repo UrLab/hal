@@ -16,7 +16,7 @@ PAMELA_URL = "http://localhost/mac.json"
 
 SENTRY_URL = ""
 
-INFLUX_URL = "http://hal:hal@localhost:8026/?db=lolilol"
+INFLUX_URL = "http://hal:hal@localhost:8026/write?db=hal"
 
 try:
     from local_config import *
