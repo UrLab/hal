@@ -1,9 +1,22 @@
 language: python
+python:
+  - "3.4"
+  - "3.5"
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq libfuse-dev arduino-core
  - pip install -r requirements.txt
 
-script: 
- - "make driver && make -C driver tests"
- - "cd arduino && ino build && ino build -m mega2560"
+script:
+ - "./build-arduino.sh"
+
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.org#titoufaitdestests"
+    template:
+      - "%{repository_name} (%{branch}:%{commit}) %{commit_message} : %{message}"
+      - "Build details: %{build_url}"
+    on_success: change
+    on_failure: always
+    use_notice: true
