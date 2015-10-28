@@ -263,9 +263,21 @@ def set_red_fps():
 
 
 @asyncio.coroutine
+def communicate_sensors():
+    payload = "\n".join(
+        '%s value=%f' % (s.name, s.value) for s in hal.sensors.values())
+    try:
+        response = yield from aiohttp.post(data=payload.encode())
+        yield from response.release()
+    except Exception as err:
+        print("Error in Sensors communication:", err)
+
+
+@asyncio.coroutine
 def hal_periodic_tasks(period_seconds=15):
     while True:
         yield from set_red_fps()
+        yield from communicate_sensors()
         temp_heater = hal.sensors.temp_radiator.value
         hal.animations.heater.upload(sinusoid(val_max=temp_heater))
         yield from asyncio.sleep(period_seconds)
