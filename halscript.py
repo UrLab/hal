@@ -83,6 +83,7 @@ def set_urlab_open():
         anim.playing = True
 
     heater_changed('heater', hal.triggers.heater.on)
+    kitchen_changed('kitchen', hal.triggers.kitchen.on)
 
 
 def set_urlab_closed(switchs_on=[], anims_fixed=[]):
@@ -104,6 +105,12 @@ def heater_changed(name, state):
     hal.animations.heater.playing = state
 
 
+@hal.on_trigger('kitchen_move')
+def kitchen_changed(name, state):
+    # light or shut down kitchen leds according to movement
+    hal.animations.kitchen.playing = state
+
+
 @hal.on_trigger('bell', True)
 def bell_pressed(name, state):
     # Play Funky town on the buzzer
@@ -117,7 +124,7 @@ def bell_pressed(name, state):
 
         # Make animations much faster for 5 seconds
         original_fps = {}
-        for a in ['bell_eyes', 'red', 'blue', 'green']:
+        for a in ['bell_eyes', 'red', 'blue', 'green', 'kitchen']:
             original_fps[a] = hal.animations[a].fps
             hal.animations[a].fps = 200
 
