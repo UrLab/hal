@@ -7,9 +7,8 @@ before_install:
  - sudo apt-get install -qq libfuse-dev arduino-core
  - pip install -r requirements.txt
 
-script: 
- - "make driver && make -C driver tests"
- - "cd arduino && ino build && ino build -m mega2560"
+script:
+ - "./build-arduino.sh"
 
 notifications:
   irc:
