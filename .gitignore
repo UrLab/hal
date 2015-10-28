@@ -1,8 +1,9 @@
 arduino/.build/
-ve/
+ve*/
 *.pyc
 *.o
 *.log
 *.ok
 *.test
+local_config.py
 driver/tests/ALL_TESTS_OK
