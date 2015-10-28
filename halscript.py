@@ -8,7 +8,7 @@ import json
 from halpy import HAL
 from halpy.generators import sinusoid, Partition, Note, Silence
 from internet import lechbot_notif_consume, lechbot_event
-from config import HALFS_ROOT, STATUS_CHANGE_URL, PAMELA_URL
+from config import HALFS_ROOT, STATUS_CHANGE_URL, PAMELA_URL, INFLUX_URL
 
 
 LIGHT_TIMEOUT = 60  # Seconds of light when passage or closing UrLab
@@ -267,7 +267,7 @@ def communicate_sensors():
     payload = "\n".join(
         '%s value=%f' % (s.name, s.value) for s in hal.sensors.values())
     try:
-        response = yield from aiohttp.post(data=payload.encode())
+        response = yield from aiohttp.post(INFLUX_URL, data=payload.encode())
         yield from response.release()
     except Exception as err:
         print("Error in Sensors communication:", err)
