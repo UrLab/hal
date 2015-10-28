@@ -251,7 +251,7 @@ def set_red_fps():
         # Red ledstrip frequency follow the number of people in the space
         response = yield from aiohttp.request('GET', PAMELA_URL)
         content = yield from response.content.read()
-        response.release()
+        yield from response.release()
 
         pamela_data = json.loads(content.decode())
         color = len(pamela_data.get('color', []))
