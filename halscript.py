@@ -234,6 +234,17 @@ def decrease_mpd_volume(*args):
     yield from execute_command('mpc', 'volume', '-5')
 
 
+@hal.on_trigger()
+def communicate_triggers(name, state):
+    """Send all triggers to influxdb"""
+    payload = '%s value=%f' % (name, state)
+    try:
+        response = yield from aiohttp.post(INFLUX_URL, data=payload.encode())
+        yield from response.release()
+    except Exception as err:
+        print("Error in Sensors communication:", err)
+
+
 @asyncio.coroutine
 def on_lechbot_notif(notif_name):
     if notif_name == 'trash':
@@ -271,6 +282,7 @@ def set_red_fps():
 
 @asyncio.coroutine
 def communicate_sensors():
+    """Send sensors values to influx"""
     payload = "\n".join(
         '%s value=%f' % (s.name, s.value) for s in hal.sensors.values())
     try:
