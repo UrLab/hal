@@ -237,12 +237,12 @@ def decrease_mpd_volume(*args):
 @hal.on_trigger()
 def communicate_triggers(name, state):
     """Send all triggers to influxdb"""
-    payload = '%s value=%f' % (name, state)
+    payload = '%s value=%d' % (name, state)
     try:
         response = yield from aiohttp.post(INFLUX_URL, data=payload.encode())
         yield from response.release()
     except Exception as err:
-        print("Error in Sensors communication:", err)
+        print("Error in trigger communication:", err)
 
 
 @asyncio.coroutine
