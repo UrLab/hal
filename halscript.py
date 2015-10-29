@@ -83,7 +83,7 @@ def set_urlab_open():
         anim.playing = True
 
     heater_changed('heater', hal.triggers.heater.on)
-    kitchen_changed('kitchen', hal.triggers.kitchen.on)
+    kitchen_changed('kitchen', hal.triggers.kitchen_move.on)
 
 
 def set_urlab_closed(switchs_on=[], anims_fixed=[]):
