@@ -324,10 +324,10 @@ def communicate_sensors():
         '%s value=%f' % (s.name, s.value) for s in hal.sensors.values())
     try:
         response = yield from aiohttp.post(INFLUX_URL, data=payload.encode())
+        yield from response.release()
     except aiohttp.errors.ContentEncodingError as err:
         if not err.message == 'deflate':
             raise
-    yield from response.release()
 
 
 @asyncio.coroutine
