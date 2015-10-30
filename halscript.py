@@ -277,6 +277,8 @@ def communicate_triggers(name, state):
     except aiohttp.errors.ContentEncodingError as err:
         if not err.message == 'deflate':
             raise
+        else:
+            print("Error in trigger communication: aiohttp deflate")
     except Exception as err:
         print("Error in trigger communication:", err)
         sentry.captureException()
@@ -328,6 +330,8 @@ def communicate_sensors():
     except aiohttp.errors.ContentEncodingError as err:
         if not err.message == 'deflate':
             raise
+        else:
+            print("Error in sensor communication: aiohttp deflate")
 
 
 @asyncio.coroutine
