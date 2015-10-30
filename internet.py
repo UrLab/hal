@@ -49,9 +49,11 @@ def lechbot_event(event_name):
             host=RMQ_HOST, login=RMQ_USER, password=RMQ_PASSWORD,
             on_error=rmq_error_callback)
         channel = yield from protocol.channel()
-        queue = yield from channel.queue_declare(LECHBOT_EVENTS_QUEUE)
+        yield from channel.queue_declare(LECHBOT_EVENTS_QUEUE)
         msg = {'time': datetime.now().strftime(TIMEFMT), 'name': event_name}
         yield from channel.publish(json.dumps(msg), '', LECHBOT_EVENTS_QUEUE)
+        yield from protocol.close()
+        transport.close()
     except aioamqp.AmqpClosedConnection:
         print("closed connections")
         return
