@@ -266,19 +266,16 @@ def on_lechbot_notif(notif_name):
 
 @asyncio.coroutine
 def set_red_fps():
-    try:
-        # Red ledstrip frequency follow the number of people in the space
-        response = yield from aiohttp.request('GET', PAMELA_URL)
-        content = yield from response.content.read()
-        yield from response.release()
+    # Red ledstrip frequency follow the number of people in the space
+    response = yield from aiohttp.request('GET', PAMELA_URL)
+    content = yield from response.content.read()
+    yield from response.release()
 
-        pamela_data = json.loads(content.decode())
-        color = len(pamela_data.get('color', []))
-        grey = len(pamela_data.get('grey', []))
-        hal.animations.red.fps = 25 * log(2 + color + grey)
-        print(datetime.now(), "Set fps to", 25 * log(2 + color + grey))
-    except Exception as err:
-        print("Error in Pamela/Red:", err)
+    pamela_data = json.loads(content.decode())
+    color = len(pamela_data.get('color', []))
+    grey = len(pamela_data.get('grey', []))
+    hal.animations.red.fps = 25 * log(2 + color + grey)
+    print(datetime.now(), "Set fps to", 25 * log(2 + color + grey))
 
 
 @asyncio.coroutine
@@ -286,21 +283,22 @@ def communicate_sensors():
     """Send sensors values to influx"""
     payload = "\n".join(
         '%s value=%f' % (s.name, s.value) for s in hal.sensors.values())
-    try:
-        response = yield from aiohttp.post(INFLUX_URL, data=payload.encode())
-        yield from response.release()
-    except Exception as err:
-        print("Error in Sensors communication:", err)
+    response = yield from aiohttp.post(INFLUX_URL, data=payload.encode())
+    yield from response.release()
 
 
 @asyncio.coroutine
 def hal_periodic_tasks(period_seconds=15):
     while True:
-        yield from set_red_fps()
-        yield from communicate_sensors()
-        temp_heater = hal.sensors.temp_radiator.value
-        hal.animations.heater.upload(sinusoid(val_max=temp_heater))
-        yield from asyncio.sleep(period_seconds)
+        try:
+            yield from set_red_fps()
+            yield from communicate_sensors()
+            temp_heater = hal.sensors.temp_radiator.value
+            hal.animations.heater.upload(sinusoid(val_max=temp_heater))
+        except Exception as err:
+            print("Error in periodic tasks:", err)
+        finally:
+            yield from asyncio.sleep(period_seconds)
 
 
 @asyncio.coroutine
