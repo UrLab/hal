@@ -305,13 +305,17 @@ def hal_periodic_tasks(period_seconds=15):
 def blinking_eyes():
     left = False
     while True:
-        delay = 2 ** hal.sensors.light_inside.value
-        print("Delay", delay)
-        for i in range(30):
-            hal.switchs.belgaleft.on = left
-            hal.switchs.belgaright.on = not left
-            left = not left
-            yield from asyncio.sleep(delay)
+        try:
+            delay = 2 ** hal.sensors.light_inside.value
+            print("Delay", delay)
+            for i in range(30):
+                hal.switchs.belgaleft.on = left
+                hal.switchs.belgaright.on = not left
+                left = not left
+                yield from asyncio.sleep(delay)
+        except Exception as err:
+            print("Error in blinking eyes:", err)
+            yield from asyncio.sleep(5)
 
 
 def main():
