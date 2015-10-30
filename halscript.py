@@ -149,7 +149,8 @@ def change_status_lechbot(trigger, state):
 @hal.on_trigger('knife_switch')
 def change_status_spaceapi(trigger, state):
     status = "open" if state else "close"
-    yield from aiohttp.request('GET', STATUS_CHANGE_URL + "?status=" + status)
+    response = yield from aiohttp.get(STATUS_CHANGE_URL + "?status=" + status)
+    yield from response.release()
 
 
 @hal.on_trigger('knife_switch', True)
