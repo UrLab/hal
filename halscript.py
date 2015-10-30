@@ -272,13 +272,8 @@ def communicate_triggers(name, state):
     """Send all triggers to influxdb"""
     payload = '%s value=%d' % (name, state)
     try:
-        response = yield from aiohttp.post(INFLUX_URL, data=payload.encode())
+        response = yield from aiohttp.post(INFLUX_URL, data=payload.encode(), headers={'Accept-encoding': 'identity'})
         yield from response.release()
-    except aiohttp.errors.ContentEncodingError as err:
-        if not err.message == 'deflate':
-            raise
-        else:
-            print("Error in trigger communication: aiohttp deflate")
     except Exception as err:
         print("Error in trigger communication:", err)
         sentry.captureException()
@@ -324,14 +319,9 @@ def communicate_sensors():
     """Send sensors values to influx"""
     payload = "\n".join(
         '%s value=%f' % (s.name, s.value) for s in hal.sensors.values())
-    try:
-        response = yield from aiohttp.post(INFLUX_URL, data=payload.encode())
-        yield from response.release()
-    except aiohttp.errors.ContentEncodingError as err:
-        if not err.message == 'deflate':
-            raise
-        else:
-            print("Error in sensor communication: aiohttp deflate")
+
+    response = yield from aiohttp.post(INFLUX_URL, data=payload.encode(), headers={'Accept-encoding': 'identity'})
+    yield from response.release()
 
 
 @asyncio.coroutine
