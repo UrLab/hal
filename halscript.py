@@ -4,7 +4,7 @@ from asyncio import subprocess
 from math import log
 from datetime import datetime
 import json
-from raven import Client
+import raven
 import os
 from functools import wraps
 
@@ -35,7 +35,7 @@ pokemusic = Partition(
     Note(440), Note(493), Note(523), Note(587), Note(659), Note(698), Note(659),
     Note(698), Note(783), Note(880), Note(698), Note(659, 3))
 
-sentry = Client(SENTRY_URL, release=raven.fetch_git_sha(os.path.dirname(__file__)))
+sentry = raven.Client(SENTRY_URL, release=raven.fetch_git_sha(os.path.dirname(__file__)))
 
 
 def sentry_listen(fun):
