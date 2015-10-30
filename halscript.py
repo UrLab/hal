@@ -243,6 +243,7 @@ def communicate_triggers(name, state):
         yield from response.release()
     except Exception as err:
         print("Error in trigger communication:", err)
+        print("Payload was: ", payload)
 
 
 @asyncio.coroutine
@@ -290,6 +291,7 @@ def communicate_sensors():
         yield from response.release()
     except Exception as err:
         print("Error in Sensors communication:", err)
+        print("Payload was: ", payload)
 
 
 @asyncio.coroutine
