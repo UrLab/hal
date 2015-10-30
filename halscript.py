@@ -272,7 +272,7 @@ def communicate_triggers(name, state):
     """Send all triggers to influxdb"""
     payload = '%s value=%d' % (name, state)
     try:
-        response = yield from aiohttp.post(INFLUX_URL, data=payload.encode())
+        response = yield from aiohttp.post(INFLUX_URL, data=payload.encode(), read_until_eof=False)
         yield from response.release()
     except Exception as err:
         print("Error in trigger communication:", err)
@@ -319,7 +319,7 @@ def communicate_sensors():
     """Send sensors values to influx"""
     payload = "\n".join(
         '%s value=%f' % (s.name, s.value) for s in hal.sensors.values())
-    response = yield from aiohttp.post(INFLUX_URL, data=payload.encode())
+    response = yield from aiohttp.post(INFLUX_URL, data=payload.encode(), read_until_eof=False)
     yield from response.release()
 
 
