@@ -4,11 +4,14 @@ from asyncio import subprocess
 from math import log
 from datetime import datetime
 import json
+from raven import Client
+import os
+from functools import wraps
 
 from halpy import HAL
 from halpy.generators import sinusoid, Partition, Note, Silence
 from internet import lechbot_notif_consume, lechbot_event
-from config import HALFS_ROOT, STATUS_CHANGE_URL, PAMELA_URL, INFLUX_URL
+from config import HALFS_ROOT, STATUS_CHANGE_URL, PAMELA_URL, INFLUX_URL, SENTRY_URL
 
 
 LIGHT_TIMEOUT = 60  # Seconds of light when passage or closing UrLab
@@ -32,6 +35,20 @@ pokemusic = Partition(
     Note(440), Note(493), Note(523), Note(587), Note(659), Note(698), Note(659),
     Note(698), Note(783), Note(880), Note(698), Note(659, 3))
 
+sentry = Client(SENTRY_URL, release=raven.fetch_git_sha(os.path.dirname(__file__)))
+
+
+def sentry_listen(fun):
+    @wraps(fun)
+    def wrapper(*args, **kwargs):
+        try:
+            return fun(*args, **kwargs)
+        except Exception as e:
+            sentry.captureException()
+            raise
+    return wrapper
+
+
 hal = HAL(HALFS_ROOT)
 
 
@@ -52,6 +69,7 @@ class SafeBuzzer():
 
 
 @asyncio.coroutine
+@sentry_listen
 def execute_command(*args):
     proc = yield from asyncio.create_subprocess_exec(
         *args,
@@ -100,18 +118,21 @@ def set_urlab_closed(switchs_on=[], anims_fixed=[]):
 
 
 @hal.on_trigger('heater')
+@sentry_listen
 def heater_changed(name, state):
     # light or shut down the heater ledstrip according to the valve
     hal.animations.heater.playing = state
 
 
 @hal.on_trigger('kitchen_move')
+@sentry_listen
 def kitchen_changed(name, state):
     # light or shut down kitchen leds according to movement
     hal.animations.kitchen.playing = state
 
 
 @hal.on_trigger('bell', True)
+@sentry_listen
 def bell_pressed(name, state):
     # Play Funky town on the buzzer
     with SafeBuzzer() as buz:
@@ -141,12 +162,14 @@ def bell_pressed(name, state):
 
 
 @hal.on_trigger('knife_switch')
+@sentry_listen
 def change_status_lechbot(trigger, state):
     event = 'hs_open' if state else 'hs_close'
     yield from lechbot_event(event)
 
 
 @hal.on_trigger('knife_switch')
+@sentry_listen
 def change_status_spaceapi(trigger, state):
     status = "open" if state else "close"
     response = yield from aiohttp.get(STATUS_CHANGE_URL + "?status=" + status)
@@ -154,6 +177,7 @@ def change_status_spaceapi(trigger, state):
 
 
 @hal.on_trigger('knife_switch', True)
+@sentry_listen
 def open_urlab(*args):
     set_urlab_open()
     with SafeBuzzer() as buz:
@@ -165,6 +189,7 @@ def open_urlab(*args):
 
 
 @hal.on_trigger('knife_switch', False)
+@sentry_listen
 def close_urlab(*args):
     yield from execute_command('mpc', 'pause')
     set_urlab_closed(
@@ -178,6 +203,7 @@ def close_urlab(*args):
 
 
 @hal.on_trigger('passage', True)
+@sentry_listen
 def passage(*args):
     if hal.triggers.knife_switch.on:
         flash = hal.animations.door_green
@@ -190,12 +216,14 @@ def passage(*args):
 
 
 @hal.on_trigger('kitchen_move', True)
+@sentry_listen
 def passage_kitchen(*args):
     if not hal.triggers.knife_switch.on:
         yield from lechbot_event('kitchen_move')
 
 
 @hal.on_trigger('door_stairs', True)
+@sentry_listen
 def passage_stairs(*args):
     if hal.triggers.knife_switch.on:
         return
@@ -218,24 +246,28 @@ def passage_stairs(*args):
 
 
 @hal.on_trigger('button_play', True)
+@sentry_listen
 def toggle_mpd_play(*args):
     # mpc toggle
     yield from execute_command('mpc', 'toggle')
 
 
 @hal.on_trigger('button_up', True)
+@sentry_listen
 def increase_mpd_volume(*args):
     # mpc volume +5
     yield from execute_command('mpc', 'volume', '+5')
 
 
 @hal.on_trigger('button_down', True)
+@sentry_listen
 def decrease_mpd_volume(*args):
     # mpc volume -5
     yield from execute_command('mpc', 'volume', '-5')
 
 
 @hal.on_trigger()
+@sentry_listen
 def communicate_triggers(name, state):
     """Send all triggers to influxdb"""
     payload = '%s value=%d' % (name, state)
@@ -244,9 +276,11 @@ def communicate_triggers(name, state):
         yield from response.release()
     except Exception as err:
         print("Error in trigger communication:", err)
+        sentry.captureException()
 
 
 @asyncio.coroutine
+@sentry_listen
 def on_lechbot_notif(notif_name):
     if notif_name == 'trash':
         with SafeBuzzer() as buz:
@@ -265,6 +299,7 @@ def on_lechbot_notif(notif_name):
 
 
 @asyncio.coroutine
+@sentry_listen
 def set_red_fps():
     # Red ledstrip frequency follow the number of people in the space
     response = yield from aiohttp.request('GET', PAMELA_URL)
@@ -279,6 +314,7 @@ def set_red_fps():
 
 
 @asyncio.coroutine
+@sentry_listen
 def communicate_sensors():
     """Send sensors values to influx"""
     payload = "\n".join(
@@ -288,6 +324,7 @@ def communicate_sensors():
 
 
 @asyncio.coroutine
+@sentry_listen
 def hal_periodic_tasks(period_seconds=15):
     while True:
         try:
@@ -297,11 +334,13 @@ def hal_periodic_tasks(period_seconds=15):
             hal.animations.heater.upload(sinusoid(val_max=temp_heater))
         except Exception as err:
             print("Error in periodic tasks:", err)
+            sentry.captureException()
         finally:
             yield from asyncio.sleep(period_seconds)
 
 
 @asyncio.coroutine
+@sentry_listen
 def blinking_eyes():
     left = False
     while True:
@@ -315,6 +354,7 @@ def blinking_eyes():
                 yield from asyncio.sleep(delay)
         except Exception as err:
             print("Error in blinking eyes:", err)
+            sentry.captureException()
             yield from asyncio.sleep(5)
 
 
@@ -333,4 +373,8 @@ def main():
     hal.run(loop)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as err:
+        sentry.captureException()
+        raise
