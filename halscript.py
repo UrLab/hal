@@ -35,18 +35,27 @@ pokemusic = Partition(
     Note(440), Note(493), Note(523), Note(587), Note(659), Note(698), Note(659),
     Note(698), Note(783), Note(880), Note(698), Note(659, 3))
 
-sentry = raven.Client(SENTRY_URL, release=raven.fetch_git_sha(os.path.dirname(__file__)))
+try:
+    sentry = raven.Client(SENTRY_URL, release=raven.fetch_git_sha(os.path.dirname(__file__)))
+except Exception as err:
+    sentry = None
+
+    if SENTRY_URL != "":
+        print("Error while initializing sentry", err)
 
 
 def sentry_listen(fun):
-    @wraps(fun)
-    def wrapper(*args, **kwargs):
-        try:
-            return fun(*args, **kwargs)
-        except Exception as e:
-            sentry.captureException()
-            raise
-    return wrapper
+    if sentry:
+        @wraps(fun)
+        def wrapper(*args, **kwargs):
+            try:
+                return fun(*args, **kwargs)
+            except Exception as e:
+                sentry.captureException()
+                raise
+        return wrapper
+    else:
+        return fun
 
 
 hal = HAL(HALFS_ROOT)
@@ -276,7 +285,8 @@ def communicate_triggers(name, state):
         yield from response.release()
     except Exception as err:
         print("Error in trigger communication:", err)
-        sentry.captureException()
+        if sentry:
+            sentry.captureException()
 
 
 @asyncio.coroutine
@@ -335,7 +345,8 @@ def hal_periodic_tasks(period_seconds=15):
             hal.animations.heater.upload(sinusoid(val_max=temp_heater))
         except Exception as err:
             print("Error in periodic tasks:", err)
-            sentry.captureException()
+            if sentry:
+                sentry.captureException()
         finally:
             yield from asyncio.sleep(period_seconds)
 
@@ -355,7 +366,8 @@ def blinking_eyes():
                 yield from asyncio.sleep(delay)
         except Exception as err:
             print("Error in blinking eyes:", err)
-            sentry.captureException()
+            if sentry:
+                sentry.captureException()
             yield from asyncio.sleep(5)
 
 
@@ -377,5 +389,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as err:
-        sentry.captureException()
+        if sentry:
+            sentry.captureException()
         raise
