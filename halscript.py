@@ -325,8 +325,11 @@ def communicate_sensors():
     """Send sensors values to influx"""
     payload = "\n".join(
         '%s value=%f' % (s.name, s.value) for s in hal.sensors.values())
+    payload += "tx_bytes value=%d\nrx_bytes value=%d" % (
+        hal.tx_bytes, hal.rx_bytes)
 
-    response = yield from aiohttp.post(INFLUX_URL, data=payload.encode(), headers={'Accept-encoding': 'identity'})
+    response = yield from aiohttp.post(INFLUX_URL, data=payload.encode(),
+                                       headers={'Accept-encoding': 'identity'})
     yield from response.release()
 
 
