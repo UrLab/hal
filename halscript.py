@@ -327,7 +327,7 @@ def set_red_fps():
     grey = len(pamela_data.get('grey', []))
     new_fps = 25 * log(2 + color + grey)
     hal.animations.red.fps = new_fps
-    logger.info("Set red ledstrip fps to", new_fps)
+    logger.info("Set red ledstrip to %d fps" % new_fps)
 
 
 @asyncio.coroutine
@@ -367,7 +367,7 @@ def blinking_eyes():
     while True:
         try:
             delay = 16 ** (1 - hal.sensors.light_inside.value)
-            logger.info("Set blinking eyes delay to", delay, "seconds")
+            logger.info("Set blinking eyes delay to %.1f seconds" % delay)
             for i in range(30):
                 hal.switchs.belgaleft.on = left
                 hal.switchs.belgaright.on = not left
