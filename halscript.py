@@ -8,12 +8,19 @@ import raven
 import os
 from functools import wraps
 import random
+import logging
+from sys import stdout
 
 from halpy import HAL
 from halpy.generators import sinusoid, Partition, Note, Silence
 from internet import lechbot_notif_consume, lechbot_event
 from config import HALFS_ROOT, STATUS_CHANGE_URL, PAMELA_URL, INFLUX_URL, SENTRY_URL
 
+
+logging.basicConfig(
+    stream=stdout, level=logging.INFO,
+    format="%(asctime)s %(levelname)7s: %(message)s")
+log = logging.getLogger(__name__)
 
 LIGHT_TIMEOUT = 60  # Seconds of light when passage or closing UrLab
 
@@ -31,14 +38,16 @@ trashmusic = Partition(
 openmusic = Partition(
     Note(523), Note(659), Note(784), Note(1046, 2), Note(784), Note(1046, 2))
 
-pokemusic = Partition(
-    Note(440), Note(415), Note(440), Note(493), Note(523), Note(587), Note(659),
-    Note(440), Note(493), Note(523), Note(587), Note(659), Note(698), Note(659),
-    Note(698), Note(783), Note(880), Note(698), Note(659, 3))
+pokemusics = [
+    (18, Partition(
+        Note(440), Note(415), Note(440), Note(493), Note(523), Note(587), Note(659),
+        Note(440), Note(493), Note(523), Note(587), Note(659), Note(698), Note(659),
+        Note(698), Note(783), Note(880), Note(698), Note(659, 3))),
 
-darkvador = Partition(
-    Note(440), Note(440), Note(440), Note(349, 0.75), Note(523, 0.25),
-    Note(440), Note(349, 0.75), Note(523, 0.25), Note(440, 2))
+    (10, Partition(
+        Note(440), Note(440), Note(440), Note(349, 0.75), Note(523, 0.25),
+        Note(440), Note(349, 0.75), Note(523, 0.25), Note(440, 2)))
+]
 
 sentry = raven.Client(SENTRY_URL, release=raven.fetch_git_sha(os.path.dirname(__file__)))
 
@@ -280,7 +289,7 @@ def communicate_triggers(name, state):
         response = yield from aiohttp.post(INFLUX_URL, data=payload.encode(), headers={'Accept-encoding': 'identity'})
         yield from response.release()
     except Exception as err:
-        print("Error in trigger communication:", err)
+        log.exception("Error while communicating trigger to influxdb")
         sentry.captureException()
 
 
@@ -296,9 +305,10 @@ def on_lechbot_notif(notif_name):
             yield from asyncio.sleep(10)
     elif notif_name == 'poke':
         with SafeBuzzer() as buz:
-            partition = random.choice([pokemusic, darkvador])
+            fps, partition = random.choice(pokemusics)
+            buz.fps = fps
             buz.looping = False
-            buz.upload(partition.to_frames())
+            buz.frames = partition.to_frames()
             buz.fps = 30
             buz.playing = True
             yield from asyncio.sleep(10)
@@ -316,7 +326,7 @@ def set_red_fps():
     color = len(pamela_data.get('color', []))
     grey = len(pamela_data.get('grey', []))
     hal.animations.red.fps = 25 * log(2 + color + grey)
-    print(datetime.now(), "Set fps to", 25 * log(2 + color + grey))
+    log.info("Set red ledstrip fps to", 25 * log(2 + color + grey))
 
 
 @asyncio.coroutine
@@ -325,7 +335,7 @@ def communicate_sensors():
     """Send sensors values to influx"""
     payload = "\n".join(
         '%s value=%f' % (s.name, s.value) for s in hal.sensors.values())
-    payload += "tx_bytes value=%d\nrx_bytes value=%d" % (
+    payload += "\ntx_bytes value=%d\nrx_bytes value=%d" % (
         hal.tx_bytes, hal.rx_bytes)
 
     response = yield from aiohttp.post(INFLUX_URL, data=payload.encode(),
@@ -343,7 +353,7 @@ def hal_periodic_tasks(period_seconds=15):
             temp_heater = hal.sensors.temp_radiator.value
             hal.animations.heater.upload(sinusoid(val_max=temp_heater))
         except Exception as err:
-            print("Error in periodic tasks:", err)
+            log.exception("Error in periodic tasks")
             sentry.captureException()
         finally:
             yield from asyncio.sleep(period_seconds)
@@ -355,25 +365,25 @@ def blinking_eyes():
     left = False
     while True:
         try:
-            delay = 2 ** hal.sensors.light_inside.value
-            print("Delay", delay)
+            delay = 16 ** (1 - hal.sensors.light_inside.value)
+            log.info("Set blinking eyes delay to", delay, "seconds")
             for i in range(30):
                 hal.switchs.belgaleft.on = left
                 hal.switchs.belgaright.on = not left
                 left = not left
                 yield from asyncio.sleep(delay)
         except Exception as err:
-            print("Error in blinking eyes:", err)
+            log.exception("Error in blinking eyes:")
             sentry.captureException()
             yield from asyncio.sleep(5)
 
 
 def main():
     if hal.triggers.knife_switch.on:
-        print("Hackerspace is opened")
+        log.info("Hackerspace is opened")
         set_urlab_open()
     else:
-        print("Hackerspace is closed")
+        log.info("Hackerspace is closed")
         set_urlab_closed()
 
     loop = asyncio.get_event_loop()
