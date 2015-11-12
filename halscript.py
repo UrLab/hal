@@ -20,7 +20,7 @@ from config import HALFS_ROOT, STATUS_CHANGE_URL, PAMELA_URL, INFLUX_URL, SENTRY
 logging.basicConfig(
     stream=stdout, level=logging.INFO,
     format="%(asctime)s %(levelname)7s: %(message)s")
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 LIGHT_TIMEOUT = 60  # Seconds of light when passage or closing UrLab
 
@@ -289,7 +289,7 @@ def communicate_triggers(name, state):
         response = yield from aiohttp.post(INFLUX_URL, data=payload.encode(), headers={'Accept-encoding': 'identity'})
         yield from response.release()
     except Exception as err:
-        log.exception("Error while communicating trigger to influxdb")
+        logger.exception("Error while communicating trigger to influxdb")
         sentry.captureException()
 
 
@@ -325,8 +325,9 @@ def set_red_fps():
     pamela_data = json.loads(content.decode())
     color = len(pamela_data.get('color', []))
     grey = len(pamela_data.get('grey', []))
-    hal.animations.red.fps = 25 * log(2 + color + grey)
-    log.info("Set red ledstrip fps to", 25 * log(2 + color + grey))
+    new_fps = 25 * log(2 + color + grey)
+    hal.animations.red.fps = new_fps
+    logger.info("Set red ledstrip fps to", new_fps)
 
 
 @asyncio.coroutine
@@ -353,7 +354,7 @@ def hal_periodic_tasks(period_seconds=15):
             temp_heater = hal.sensors.temp_radiator.value
             hal.animations.heater.upload(sinusoid(val_max=temp_heater))
         except Exception as err:
-            log.exception("Error in periodic tasks")
+            logger.exception("Error in periodic tasks")
             sentry.captureException()
         finally:
             yield from asyncio.sleep(period_seconds)
@@ -366,24 +367,24 @@ def blinking_eyes():
     while True:
         try:
             delay = 16 ** (1 - hal.sensors.light_inside.value)
-            log.info("Set blinking eyes delay to", delay, "seconds")
+            logger.info("Set blinking eyes delay to", delay, "seconds")
             for i in range(30):
                 hal.switchs.belgaleft.on = left
                 hal.switchs.belgaright.on = not left
                 left = not left
                 yield from asyncio.sleep(delay)
         except Exception as err:
-            log.exception("Error in blinking eyes:")
+            logger.exception("Error in blinking eyes:")
             sentry.captureException()
             yield from asyncio.sleep(5)
 
 
 def main():
     if hal.triggers.knife_switch.on:
-        log.info("Hackerspace is opened")
+        logger.info("Hackerspace is opened")
         set_urlab_open()
     else:
-        log.info("Hackerspace is closed")
+        logger.info("Hackerspace is closed")
         set_urlab_closed()
 
     loop = asyncio.get_event_loop()
