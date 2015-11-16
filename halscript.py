@@ -7,6 +7,7 @@ import json
 import raven
 import os
 from functools import wraps
+import random
 
 from halpy import HAL
 from halpy.generators import sinusoid, Partition, Note, Silence
@@ -34,6 +35,11 @@ pokemusic = Partition(
     Note(440), Note(415), Note(440), Note(493), Note(523), Note(587), Note(659),
     Note(440), Note(493), Note(523), Note(587), Note(659), Note(698), Note(659),
     Note(698), Note(783), Note(880), Note(698), Note(659, 3))
+
+darkvador = Partition(
+    Note(440), Note(440), Note(440), Note(349, 0.75), Note(523, 0.25),
+    Note(440), Note(349, 0.75), Note(523, 0.25), Note(440, 2))
+
 
 try:
     sentry = raven.Client(SENTRY_URL, release=raven.fetch_git_sha(os.path.dirname(__file__)))
@@ -301,8 +307,9 @@ def on_lechbot_notif(notif_name):
             yield from asyncio.sleep(10)
     elif notif_name == 'poke':
         with SafeBuzzer() as buz:
+            partition = random.choice([pokemusic, darkvador])
             buz.looping = False
-            buz.upload(pokemusic.to_frames())
+            buz.upload(partition.to_frames())
             buz.fps = 30
             buz.playing = True
             yield from asyncio.sleep(10)
