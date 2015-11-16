@@ -14,7 +14,7 @@ from sys import stdout
 from halpy import HAL
 from halpy.generators import sinusoid, Partition, Note, Silence
 from internet import lechbot_notif_consume, lechbot_event
-from config import HALFS_ROOT, STATUS_CHANGE_URL, PAMELA_URL, INFLUX_URL, SENTRY_URL
+from config import HALFS_ROOT, STATUS_CHANGE_URL, PAMELA_URL, INFLUX_URL, SENTRY_URL, INCUBATOR_STATUS_CHANGE_URL, INCUBATOR_SECRET
 
 
 logging.basicConfig(
@@ -29,11 +29,11 @@ funkytown = Partition(
     Note(494), Note(659), Note(622), Note(494, 2), Silence(3))
 
 trashmusic = Partition(
-        Note(220), Note(262), Note(330), Note(440), Note(494), Note(262), Note(330),
-        Note(494), Note(523), Note(330), Note(262), Note(523), Note(370), Note(294),
-        Note(220), Note(370), Note(349), Note(262), Note(220), Note(262, 2),
-        Note(392), Note(392, 0.5), Note(330, 0.5), Note(262), Note(247), Note(262),
-        Note(262, 2))
+    Note(220), Note(262), Note(330), Note(440), Note(494), Note(262), Note(330),
+    Note(494), Note(523), Note(330), Note(262), Note(523), Note(370), Note(294),
+    Note(220), Note(370), Note(349), Note(262), Note(220), Note(262, 2),
+    Note(392), Note(392, 0.5), Note(330, 0.5), Note(262), Note(247), Note(262),
+    Note(262, 2))
 
 openmusic = Partition(
     Note(523), Note(659), Note(784), Note(1046, 2), Note(784), Note(1046, 2))
@@ -151,7 +151,7 @@ def bell_pressed(name, state):
     # Play Funky town on the buzzer
     with SafeBuzzer() as buz:
         buz.looping = False
-        buz.upload(funkytown.to_frames()*2)
+        buz.upload(funkytown.to_frames() * 2)
         buz.fps = 20
 
         # Upload glow to the space invader eyes
@@ -187,7 +187,14 @@ def change_status_lechbot(trigger, state):
 def change_status_spaceapi(trigger, state):
     status = "open" if state else "close"
     response = yield from aiohttp.get(STATUS_CHANGE_URL + "?status=" + status)
+
+    response_incubator = yield from aiohttp.post(INCUBATOR_STATUS_CHANGE_URL, data={
+        "secret": INCUBATOR_SECRET,
+        "open": int(state)
+    })
+
     yield from response.release()
+    yield from response_incubator.release()
 
 
 @hal.on_trigger('knife_switch', True)

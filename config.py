@@ -12,6 +12,9 @@ SENSORS_GRAPHITE = "localhost"
 STATUS_CHANGE_URL = "http://localhost/"
 STATUS_GET_URL = "http://localhost/"
 
+INCUBATOR_STATUS_CHANGE_URL = "http://localhost/"
+INCUBATOR_SECRET = "thisisnosecret"
+
 PAMELA_URL = "http://localhost/mac.json"
 
 SENTRY_URL = ""
