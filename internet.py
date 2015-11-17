@@ -6,12 +6,15 @@ from datetime import datetime
 from config import RMQ_HOST, RMQ_USER, RMQ_PASSWORD
 from config import LECHBOT_EVENTS_QUEUE, LECHBOT_NOTIFS_QUEUE
 
+from logging import getLogger
+logger = getLogger()
+
 TIMEFMT = '%Y-%m-%d %H:%M:%S'
 
 
 @asyncio.coroutine
 def rmq_error_callback(exc):
-    print("Error when connecting to RabbitMQ:", exc)
+    logger.error("Error when connecting to RabbitMQ:", exc)
 
 
 @asyncio.coroutine
@@ -38,7 +41,7 @@ def lechbot_notif_consume(coroutine):
 
         yield from channel.basic_consume(LECHBOT_NOTIFS_QUEUE, callback=consume)
     except aioamqp.AmqpClosedConnection:
-        print("closed connections")
+        logger.exception("closed connections")
         return
 
 
@@ -55,5 +58,5 @@ def lechbot_event(event_name):
         yield from protocol.close()
         transport.close()
     except aioamqp.AmqpClosedConnection:
-        print("closed connections")
+        logger.exception("closed connections")
         return
