@@ -330,8 +330,8 @@ def set_red_fps():
     yield from response.release()
 
     pamela_data = json.loads(content.decode())
-    color = len(pamela_data.get('color', []))
-    grey = len(pamela_data.get('grey', []))
+    color = len(pamela_data.get('users', []))
+    grey = len(pamela_data.get('unknown_mac', []))
     new_fps = 25 * log(2 + color + grey)
     hal.animations.red.fps = new_fps
     logger.info("Set red ledstrip to %d fps" % new_fps)

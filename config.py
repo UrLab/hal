@@ -15,7 +15,7 @@ STATUS_GET_URL = "http://localhost/"
 INCUBATOR_STATUS_CHANGE_URL = "http://localhost/"
 INCUBATOR_SECRET = "thisisnosecret"
 
-PAMELA_URL = "http://localhost/mac.json"
+PAMELA_URL = "http://incubator.urlab.be/space/pamela"
 
 SENTRY_URL = ""
 
