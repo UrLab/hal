@@ -2,7 +2,6 @@ import asyncio
 import aiohttp
 from asyncio import subprocess
 from math import log
-from datetime import datetime
 import json
 import raven
 import os
@@ -72,14 +71,14 @@ class SafeBuzzer():
     (hardware limitation).
     """
     def __enter__(self):
-        self.red_playing = hal.animations.roof_r.playing
-        if self.red_playing:
-            hal.animations.roof_r.playing = False
+        self.initial_color = hal.rgb.roof.color
+        if self.initial_color[0]:
+            hal.rgb.roof.color = (0) + self.initial_color
         return hal.animations.buzzer
 
     def __exit__(self, *args, **kwargs):
-        if self.red_playing:
-            hal.animations.roof_r.playing = True
+        if self.initial_color[0]:
+            hal.rgb.roof.color = self.initial_color
 
 
 @asyncio.coroutine
@@ -94,14 +93,14 @@ def execute_command(*args):
 
 
 def set_urlab_open():
-    for sw in ['power', 'ampli', 'knife_g', 'leds_stairs']:
+    for sw in ['power', 'ampli', 'leds_stairs']:
         hal.switchs[sw].on = True
 
-    for sw in ['knife_r', 'knife_b']:
-        hal.switchs[sw].on = False
+    hal.rgbs.knife_leds.css = '#0f0'
+    hal.rgbs.roof.css = '#fff'
 
     # Put fixed animations on
-    for a in ['bell_eyes', 'roof_r', 'roof_g', 'roof_b']:
+    for a in ['bell_eyes']:
         hal.animations[a].upload([1.0])
         hal.animations[a].playing = True
         hal.animations[a].looping = True
@@ -121,6 +120,9 @@ def set_urlab_open():
 def set_urlab_closed(switchs_on=[], anims_fixed=[]):
     for sw in hal.switchs.values():
         sw.on = sw.name in switchs_on
+
+    hal.rgbs.roof.css = '#f00'
+    hal.rgbs.knife_leds.css = '#f00'
 
     for anim in hal.animations.values():
         if anim.name not in anims_fixed:
@@ -214,8 +216,8 @@ def open_urlab(*args):
 def close_urlab(*args):
     yield from execute_command('mpc', 'pause')
     set_urlab_closed(
-        switchs_on=['power', 'leds_stairs', 'knife_r'],
-        anims_fixed=['green', 'roof_r'])
+        switchs_on=['power', 'leds_stairs'],
+        anims_fixed=['green'])
     yield from asyncio.sleep(LIGHT_TIMEOUT)
 
     # If the hackerspace is still closed, cut power
@@ -254,13 +256,16 @@ def passage_stairs(*args):
     hal.animations.green.upload([1.0])
     hal.animations.green.looping = True
     hal.animations.green.playing = True
-    hal.switchs.knife_b.on = True
+    hal.rgbs.knife_leds.css = '#00f'
 
     yield from lechbot_event('door_stairs')
-    yield from asyncio.sleep(LIGHT_TIMEOUT)
-    hal.switchs.knife_b.on = False
+    yield from asyncio.sleep(LIGHT_TIMEOUT/2)
+    hal.rgbs.knife_leds.css = '#f0f'
+
+    yield from asyncio.sleep(LIGHT_TIMEOUT/2)
 
     if not hal.triggers.knife_switch.on:
+        hal.rgbs.knife_leds.css = '#000'
         hal.switchs.power.on = False
         hal.switchs.leds_stairs.on = False
         hal.animations.green.looping = False
