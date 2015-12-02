@@ -71,14 +71,14 @@ class SafeBuzzer():
     (hardware limitation).
     """
     def __enter__(self):
-        self.initial_color = hal.rgb.roof.color
+        self.initial_color = hal.rgbs.roof.color
         if self.initial_color[0]:
-            hal.rgb.roof.color = (0) + self.initial_color
+            hal.rgbs.roof.color = (0) + self.initial_color
         return hal.animations.buzzer
 
     def __exit__(self, *args, **kwargs):
         if self.initial_color[0]:
-            hal.rgb.roof.color = self.initial_color
+            hal.rgbs.roof.color = self.initial_color
 
 
 @asyncio.coroutine
