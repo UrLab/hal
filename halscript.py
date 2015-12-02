@@ -13,7 +13,7 @@ from sys import stdout
 from halpy import HAL
 from halpy.generators import sinusoid, Partition, Note, Silence
 from internet import lechbot_notif_consume, lechbot_event
-from config import HALFS_ROOT, STATUS_CHANGE_URL, PAMELA_URL, INFLUX_URL, SENTRY_URL, INCUBATOR_STATUS_CHANGE_URL, INCUBATOR_SECRET
+from config import HALFS_ROOT, PAMELA_URL, INFLUX_URL, SENTRY_URL, INCUBATOR_STATUS_CHANGE_URL, INCUBATOR_SECRET
 
 
 logging.basicConfig(
@@ -187,15 +187,11 @@ def change_status_lechbot(trigger, state):
 @hal.on_trigger('knife_switch')
 @sentry_listen
 def change_status_spaceapi(trigger, state):
-    status = "open" if state else "close"
-    response = yield from aiohttp.get(STATUS_CHANGE_URL + "?status=" + status)
-
     response_incubator = yield from aiohttp.post(INCUBATOR_STATUS_CHANGE_URL, data={
         "secret": INCUBATOR_SECRET,
-        "open": int(state)
+        "open": 1 if state else 0,
     })
 
-    yield from response.release()
     yield from response_incubator.release()
 
 
