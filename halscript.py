@@ -73,7 +73,7 @@ class SafeBuzzer():
     def __enter__(self):
         self.initial_color = hal.rgbs.roof.color
         if self.initial_color[0]:
-            hal.rgbs.roof.color = (0) + self.initial_color
+            hal.rgbs.roof.color = (0,) + self.initial_color[1:]
         return hal.animations.buzzer
 
     def __exit__(self, *args, **kwargs):
