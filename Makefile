@@ -3,9 +3,9 @@ ifeq ($(MODEL),)
 	MODEL=mega2560
 endif
 
-.PHONY: build clean all driver
+.PHONY: build clean all driver webapp
 
-all: upload.ok driver
+all: upload.ok driver webapp
 build: arduino/.build/uno/firmware.hex
 
 version.h: .git
@@ -17,6 +17,9 @@ version.h: .git
 
 driver:
 	+make -C driver
+
+webapp:
+	+make -C webapp
 
 arduino/.build/uno/firmware.hex: arduino/src/sketch.ino
 	cd arduino && ino build -m=$(MODEL) && cd ..
