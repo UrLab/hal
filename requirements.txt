@@ -1,5 +1,6 @@
 git+https://github.com/UrLab/halpy.git
 aioamqp
 aiohttp
+autobahn
 ipython
 raven

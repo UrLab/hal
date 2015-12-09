@@ -6,15 +6,17 @@ import json
 import raven
 import os
 from functools import wraps
+from datetime import datetime
 import random
 import logging
 from sys import stdout
 
 from halpy import HAL
 from halpy.generators import sinusoid, Partition, Note, Silence
-from internet import publish_hal_event
-from config import HALFS_ROOT, PAMELA_URL, INFLUX_URL, SENTRY_URL, INCUBATOR_STATUS_CHANGE_URL, INCUBATOR_SECRET
-
+from config import HALFS_ROOT, PAMELA_URL, INFLUX_URL, SENTRY_URL
+from config import INCUBATOR_STATUS_CHANGE_URL, INCUBATOR_SECRET
+from config import WAMP_REALM, WAMP_HOST
+from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 logging.basicConfig(
     stream=stdout, level=logging.INFO,
@@ -304,26 +306,7 @@ def communicate_triggers(name, state):
         sentry.captureException()
 
 
-@asyncio.coroutine
-@sentry_listen
-def on_lechbot_notif(notif_name):
-    if notif_name == 'trash':
-        with SafeBuzzer() as buz:
-            buz.looping = False
-            buz.upload(trashmusic.to_frames())
-            buz.fps = 17
-            buz.playing = True
-            yield from asyncio.sleep(10)
-    elif notif_name == 'poke':
-        with SafeBuzzer() as buz:
-            fps, partition = random.choice(pokemusics)
-            buz.fps = fps
-            buz.looping = False
-            buz.frames = partition.to_frames()
-            buz.fps = 30
-            buz.playing = True
-            yield from asyncio.sleep(10)
-
+### Periodic tasks ###
 
 @asyncio.coroutine
 @sentry_listen
@@ -390,23 +373,50 @@ def blinking_eyes():
             yield from asyncio.sleep(5)
 
 
-def main():
-    if hal.triggers.knife_switch.on:
-        logger.info("Hackerspace is opened")
-        set_urlab_open()
-    else:
-        logger.info("Hackerspace is closed")
-        set_urlab_closed()
+class HALApp(ApplicationSession):
+    @asyncio.coroutine
+    def onJoin(self, details):
+        if hal.triggers.knife_switch.on:
+            logger.info("Hackerspace is opened")
+            set_urlab_open()
+        else:
+            logger.info("Hackerspace is closed")
+            set_urlab_closed()
 
-    loop = asyncio.get_event_loop()
-    # asyncio.async(lechbot_notif_consume(on_lechbot_notif))
-    asyncio.async(hal_periodic_tasks(15))
-    asyncio.async(blinking_eyes())
-    hal.run(loop)
+        def pubevent(key, text):
+            now = datetime.now()
+            self.publish('hal.eventstream', key=key, text=text, time=now)
+        globals()['publish_hal_event'] = pubevent
+
+        @asyncio.coroutine
+        def on_notification(key, time, text):
+            if key == 'trash':
+                with SafeBuzzer() as buz:
+                    buz.looping = False
+                    buz.upload(trashmusic.to_frames())
+                    buz.fps = 17
+                    buz.playing = True
+                    yield from asyncio.sleep(10)
+            elif key == 'poke':
+                with SafeBuzzer() as buz:
+                    fps, partition = random.choice(pokemusics)
+                    buz.fps = fps
+                    buz.looping = False
+                    buz.frames = partition.to_frames()
+                    buz.fps = 30
+                    buz.playing = True
+                    yield from asyncio.sleep(10)
+
+        asyncio.async(hal_periodic_tasks(15))
+        asyncio.async(blinking_eyes())
+        yield from self.subscribe(on_event, u'lechbot.notifstream')
+        hal.install_loop()
 
 if __name__ == "__main__":
     try:
-        main()
+        runner = ApplicationRunner(WAMP_HOST, WAMP_REALM,
+                               debug_wamp=False, debug=False)
+        runner.run(HALApp)
     except Exception as err:
         sentry.captureException()
         raise
