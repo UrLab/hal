@@ -6,7 +6,7 @@ Trigger triggers[] = {
     Trigger("bell", 49, HIGH),
     Trigger("knife_switch", 53, HIGH, 5000),
     Trigger("passage", 28, LOW),
-    Trigger("heater", 47, LOW),
+    Trigger("heater", 47, HIGH),
     Trigger("button_up", 43, HIGH),
     Trigger("button_down", 41, HIGH),
     Trigger("button_play", 39, HIGH),
