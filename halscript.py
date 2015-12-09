@@ -384,7 +384,8 @@ class HALApp(ApplicationSession):
             set_urlab_closed()
 
         def pubevent(key, text):
-            now = datetime.now()
+            print("=========== PUBLISH EVENT", key, text)
+            now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
             self.publish('hal.eventstream', key=key, text=text, time=now)
         globals()['publish_hal_event'] = pubevent
 
@@ -409,7 +410,7 @@ class HALApp(ApplicationSession):
 
         asyncio.async(hal_periodic_tasks(15))
         asyncio.async(blinking_eyes())
-        yield from self.subscribe(on_event, u'lechbot.notifstream')
+        yield from self.subscribe(on_notification, u'lechbot.notifstream')
         hal.install_loop()
 
 if __name__ == "__main__":
