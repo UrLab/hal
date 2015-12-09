@@ -225,7 +225,7 @@ def close_urlab(*args):
 
     if hal.triggers.heater.on:
         hal.animations.buzzer.frames = [44, 44, 0, 0]
-        hal.animations.heate.frames = [255, 255, 0, 0]
+        hal.animations.heater.frames = [255, 255, 0, 0]
         for a in ['buzzer', 'heater']:
             anim = hal.animations[a]
             anim.fps = 4
