@@ -140,6 +140,9 @@ def set_urlab_closed(switchs_on=[], anims_fixed=[]):
 def heater_changed(name, state):
     # light or shut down the heater ledstrip according to the valve
     hal.animations.heater.playing = state
+    if not state and not hal.triggers.knife_switch.on:
+        hal.animations.buzzer.playing = False
+        hal.animations.buzzer.looping = False
 
 
 @hal.on_trigger('kitchen_move')
@@ -219,7 +222,21 @@ def close_urlab(*args):
     set_urlab_closed(
         switchs_on=['power', 'leds_stairs'],
         anims_fixed=['green'])
+
+    if hal.triggers.heater.on:
+        hal.animations.buzzer.frames = [44, 44, 0, 0]
+        hal.animations.heate.frames = [255, 255, 0, 0]
+        for a in ['buzzer', 'heater']:
+            anim = hal.animations[a]
+            anim.fps = 4
+            anim.looping = True
+            anim.playing = True
+
     yield from asyncio.sleep(LIGHT_TIMEOUT)
+
+    hal.animations.buzzer.playing = False
+    hal.animations.buzzer.looping = False
+    hal.animations.heater.playing = False
 
     # If the hackerspace is still closed, cut power
     if not hal.triggers.knife_switch.on:
