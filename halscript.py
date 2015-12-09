@@ -169,7 +169,7 @@ def bell_pressed(name, state):
 
         buz.playing = True
 
-        yield from publish_hal_event('bell', "On sonne à la porte")
+        publish_hal_event('bell', "On sonne à la porte")
         yield from asyncio.sleep(7)
 
         # Restore original animations
@@ -186,7 +186,7 @@ def change_status_lechbot(trigger, state):
         text = "Le hackerspace est ouvert ! Rainbows /o/"
     else:
         text = "Le hackerspace est fermé !"
-    yield from publish_hal_event('space_status', text)
+    publish_hal_event('space_status', text)
 
 
 @hal.on_trigger('knife_switch')
@@ -236,14 +236,14 @@ def passage(*args):
         flash.playing = True
         flash.fps = 150
     else:
-        yield from publish_hal_event('passage', "Tiens, du mouvement à l'intérieur du Hackerspace !?")
+        publish_hal_event('passage', "Tiens, du mouvement à l'intérieur du Hackerspace !?")
 
 
 @hal.on_trigger('kitchen_move', True)
 @sentry_listen
 def passage_kitchen(*args):
     if not hal.triggers.knife_switch.on:
-        yield from publish_hal_event('kitchen_move', "Ça bouge dans la cuisine")
+        publish_hal_event('kitchen_move', "Ça bouge dans la cuisine")
 
 
 @hal.on_trigger('door_stairs', True)
@@ -259,7 +259,7 @@ def passage_stairs(*args):
     hal.animations.green.playing = True
     hal.rgbs.knife_leds.css = '#00f'
 
-    yield from publish_hal_event('door_stairs', "Y'a du passage dans l'escalier")
+    publish_hal_event('door_stairs', "Y'a du passage dans l'escalier")
     yield from asyncio.sleep(LIGHT_TIMEOUT/2)
     hal.rgbs.knife_leds.css = '#f0f'
 
