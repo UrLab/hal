@@ -12,7 +12,7 @@ from sys import stdout
 
 from halpy import HAL
 from halpy.generators import sinusoid, Partition, Note, Silence
-from internet import lechbot_notif_consume, lechbot_event
+from internet import publish_hal_event
 from config import HALFS_ROOT, PAMELA_URL, INFLUX_URL, SENTRY_URL, INCUBATOR_STATUS_CHANGE_URL, INCUBATOR_SECRET
 
 
@@ -167,7 +167,7 @@ def bell_pressed(name, state):
 
         buz.playing = True
 
-        yield from lechbot_event('bell')
+        yield from publish_hal_event('bell', "On sonne à la porte")
         yield from asyncio.sleep(7)
 
         # Restore original animations
@@ -180,8 +180,11 @@ def bell_pressed(name, state):
 @hal.on_trigger('knife_switch')
 @sentry_listen
 def change_status_lechbot(trigger, state):
-    event = 'hs_open' if state else 'hs_close'
-    yield from lechbot_event(event)
+    if state:
+        text = "Le hackerspace est ouvert ! Rainbows /o/"
+    else:
+        text = "Le hackerspace est fermé !"
+    yield from publish_hal_event('space_status', text)
 
 
 @hal.on_trigger('knife_switch')
@@ -231,14 +234,14 @@ def passage(*args):
         flash.playing = True
         flash.fps = 150
     else:
-        yield from lechbot_event('passage')
+        yield from publish_hal_event('passage', "Tiens, du mouvement à l'intérieur du Hackerspace !?")
 
 
 @hal.on_trigger('kitchen_move', True)
 @sentry_listen
 def passage_kitchen(*args):
     if not hal.triggers.knife_switch.on:
-        yield from lechbot_event('kitchen_move')
+        yield from publish_hal_event('kitchen_move', "Ça bouge dans la cuisine")
 
 
 @hal.on_trigger('door_stairs', True)
@@ -254,7 +257,7 @@ def passage_stairs(*args):
     hal.animations.green.playing = True
     hal.rgbs.knife_leds.css = '#00f'
 
-    yield from lechbot_event('door_stairs')
+    yield from publish_hal_event('door_stairs', "Y'a du passage dans l'escalier")
     yield from asyncio.sleep(LIGHT_TIMEOUT/2)
     hal.rgbs.knife_leds.css = '#f0f'
 
@@ -396,7 +399,7 @@ def main():
         set_urlab_closed()
 
     loop = asyncio.get_event_loop()
-    asyncio.async(lechbot_notif_consume(on_lechbot_notif))
+    # asyncio.async(lechbot_notif_consume(on_lechbot_notif))
     asyncio.async(hal_periodic_tasks(15))
     asyncio.async(blinking_eyes())
     hal.run(loop)

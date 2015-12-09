@@ -7,6 +7,8 @@ RMQ_PASSWORD = "guest"
 LECHBOT_EVENTS_QUEUE = "test.hal.events"
 LECHBOT_NOTIFS_QUEUE = "test.hal.notifs"
 
+WAMP_URL = "http://localhost:8080/publish"
+
 SENSORS_GRAPHITE = "localhost"
 
 STATUS_CHANGE_URL = "http://localhost/"
