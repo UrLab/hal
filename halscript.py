@@ -362,8 +362,9 @@ def hal_periodic_tasks(period_seconds=15):
         try:
             yield from set_red_fps()
             yield from communicate_sensors()
-            temp_heater = hal.sensors.temp_radiator.value
-            hal.animations.heater.upload(sinusoid(val_max=temp_heater))
+            if hal.triggers.knife_switch.on:
+                temp_heater = hal.sensors.temp_radiator.value
+                hal.animations.heater.upload(sinusoid(val_max=temp_heater))
         except Exception as err:
             logger.exception("Error in periodic tasks")
             sentry.captureException()
