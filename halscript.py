@@ -404,7 +404,6 @@ class HALApp(ApplicationSession):
                     buz.fps = fps
                     buz.looping = False
                     buz.frames = partition.to_frames()
-                    buz.fps = 30
                     buz.playing = True
                     yield from asyncio.sleep(10)
 
