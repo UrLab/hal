@@ -123,7 +123,7 @@ def set_urlab_closed(switchs_on=[], anims_fixed=[]):
     for sw in hal.switchs.values():
         sw.on = sw.name in switchs_on
 
-    hal.rgbs.roof.css = '#f00'
+    hal.rgbs.roof.css = '#00f'
     hal.rgbs.knife_leds.css = '#f00'
 
     for anim in hal.animations.values():
@@ -224,8 +224,8 @@ def close_urlab(*args):
         anims_fixed=['green'])
 
     if hal.triggers.heater.on:
-        hal.animations.buzzer.frames = [44, 44, 0, 0]
-        hal.animations.heater.frames = [255, 255, 0, 0]
+        hal.animations.buzzer.frames = [44, 0]
+        hal.animations.heater.frames = [255, 0]
         for a in ['buzzer', 'heater']:
             anim = hal.animations[a]
             anim.fps = 4
